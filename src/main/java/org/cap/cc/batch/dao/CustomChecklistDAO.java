@@ -1,7 +1,86 @@
 package org.cap.cc.batch.dao;
 
 public class CustomChecklistDAO {
+
+	 
+	public static final String GET_CUSTOM_CHECKLIST_FILE_PATH="SELECT Trim(c147.column_data_t) "
+//			+ "|| DECODE (weekday(c1.column_data_t) , 1, 'Monday', 2, 'Tuesday', \n"
+//			+ "               3, 'Wednesday', 4, 'Thursday', 5, 'Friday', 6, 'Saturday', 0, 'Sunday') || \"/\""
+			+ " as FilePath  \n"
+			+ "FROM ptt_std_code_col c147, \n"
+			+ "ptt_standard_codes s, \n"
+			+ "ptt_std_code_col c1\n"
+			+ "WHERE      c147.table_u = 147  \n"
+			+ "AND Trim(c147.key_u) = \"39\"\n"
+			+ "AND Trim(c147.column_type_u)  = \"PATH\" \n"
+			+ "AND s.table_u = 1\n"
+			+ "AND s.key_u = \"LAPCURRDT\" \n"
+			+ "AND current BETWEEN s.effective_dt and s.termination_dt\n"
+			+ "AND s.table_u = c1.table_u\n"
+			+ "AND s.key_u = c1.key_u\n"
+			+ "AND c1.column_type_u = \"DATE\"  \n"
+			+ "AND c1.column_data_t IS NOT NULL\n"
+			+ "AND trim(c1.column_data_t) <> \"\"\n"
+			+ "";
 	
+	public static final String GET_TASK_ID ="SELECT Min (t.task_u)\n"
+			+ "FROM	ptt_task t,\n"
+			+ "lpt_print_set_item m\n"
+			+ "WHERE t.task_u = m.task_u \n"
+			+ "AND t.busn_activity_u = 'CO000200'  \n"
+			+ "AND t.initiated_dt IS NOT NULL  \n"
+			+ "AND t.started_dt IS NULL   \n"
+			+ "AND t.completed_dt IS NULL  \n"
+			+ "AND t.update_user_u <> 'CUSTCHK'  \n"
+			+ "AND (m.print_set_detail_c like 'CHECKLST%'  OR m.print_set_detail_c like 'CHECKLIST%' )\n"
+			+ ";\n"
+			+ "";
 	
+	public static final String UPDATE_USER_U = "UPDATE ptt_task\n"
+			+ "SET ptt_task.update_user_u = 'CUSTCHK',\n"
+			+ "	last_update_dt = current,\n"
+			+ "	update_pgm_c = :<ProgramID>\n"
+			+ "WHERE ptt_task.busn_activity_u = 'CO000200' AND\n"
+			+ "	ptt_task.task_u = :<task_u> AND\n"
+			+ "	ptt_task.update_user_u <> : 'CUSTCHK'\n"
+			+ "";
+	
+	public static final String GET_BASIC_CHECKLIST_DETAILS = " SELECT M.set_item_seq_no_u AS ITEMSEQNO,\n"
+			+ "	Trim(A.addtnl_data_t) AS CHKLIST,\n"
+			+ "	Trim(B.addtnl_data_t) AS AUID,\n"
+			+ "	Trim(C.addtnl_data_t) AS SUABE,\n"
+			+ "	Trim(D.addtnl_data_t) AS EDITION,\n"
+			+ "	Trim(F.addtnl_data_t) AS CHKLSTDATE,\n"
+			+ "	Trim(G.addtnl_data_t) AS CYCLESEQNO,\n"
+			+ "	Trim(P.column_data_t) AS PACKETTYPE,\n"
+			+ "	Trim(M.print_set_detail_c) as print_set_detail_c\n"
+			+ "\n"
+			+ "FROM  lpt_print_set_item M,\n"
+			+ "	ptt_std_code_col P,\n"
+			+ "	lpt_addtnl_d_value A,\n"
+			+ "	lpt_addtnl_d_value B,\n"
+			+ "	lpt_addtnl_d_value C,\n"
+			+ "	lpt_addtnl_d_value D,\n"
+			+ "	lpt_addtnl_d_value E,\n"
+			+ "	lpt_addtnl_d_value F,\n"
+			+ "	lpt_addtnl_d_value G\n"
+			+ "\n"
+			+ "WHERE (M.task_u = 38453013 ) \n"
+			+ "AND (M.print_set_detail_c like 'CHECKLST%' OR M.print_set_detail_c like 'CHECKLIST%') \n"
+			+ "AND M.print_set_detail_c = P.key_u\n"
+			+ "AND P.table_u = 201  \n"
+			+ "AND P.column_type_u = 'PRTSETDEFN'\n"
+			+ "AND M.addtnl_data_u = A.addtnl_data_u  \n"
+			+ "AND A.addtnl_data_fld_c = 'CHKLIST'  \n"
+			+ "AND (C.addtnl_data_u = A.addtnl_data_u AND C.addtnl_data_fld_c = 'SUABE')\n"
+			+ "AND (B.addtnl_data_u = A.addtnl_data_u AND B.addtnl_data_fld_c = 'AUID')\n"
+			+ "AND (D.addtnl_data_u = A.addtnl_data_u AND D.addtnl_data_fld_c = 'EDITION')  \n"
+			+ "AND (E.addtnl_data_u = A.addtnl_data_u AND E.addtnl_data_fld_c = 'CUSTCHKLST' AND E.addtnl_data_t = 'Y')\n"
+			+ "AND (F.addtnl_data_u = A.addtnl_data_u AND F.addtnl_data_fld_c = 'CHKLSTDATE') \n"
+			+ "AND (G.addtnl_data_u = A.addtnl_data_u AND G.addtnl_data_fld_c = 'SEQNBR')\n"
+			+ "\n"
+			+ ";";
+
+
 
 }
