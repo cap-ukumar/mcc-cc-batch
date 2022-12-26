@@ -61,5 +61,25 @@ public class CustomChecklistBatch {
 		return rs;
 	}
 	
+	
+	public static ResultSet getOracleDbResults(String query)  {
+
+		ResultSet rs = null;
+		 try (Connection connection = DriverManager.getConnection(CommonUtils.getProperty(CapConfigConstants.ORACLE_URL),
+				 CommonUtils.getProperty(CapConfigConstants.ORACLE_USERNAME),
+				 CommonUtils.getProperty(CapConfigConstants.ORACLE_PASSWORD));
+	                Statement statement = connection.createStatement();) {
+	            rs = statement.executeQuery(query);
+	           if(rs==null) {
+	        	   // add logger or do something 
+	           }
+	        	   	
+	        }
+	        catch (Exception e) {
+	        	
+	        }
+		return rs;
+	}
+	
 
 }
