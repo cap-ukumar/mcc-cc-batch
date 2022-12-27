@@ -89,6 +89,7 @@ public class CustomChecklistBatch {
 		// remove DB connections
 
 		removeConnections();
+	}
 		/*
 		 * if(restTemplate==null) { getRestTemplate(); }
 		 */
@@ -200,7 +201,6 @@ public class CustomChecklistBatch {
 			e.printStackTrace();
 		}
 		return chetity;
-=======
 
 	}
 
