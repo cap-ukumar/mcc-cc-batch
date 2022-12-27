@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.cap.cc.batch.dao.CustomChecklistDAO;
 import org.cap.cc.batch.utils.CapConfigConstants;
 import org.cap.cc.batch.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -20,17 +21,37 @@ import org.springframework.web.client.RestTemplate;
 public class CustomChecklistBatch {
 	private static  RestTemplate restTemplate;
 	
-	Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
+	static Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 	
 	public static void processData() {
-
 		
-		if(restTemplate==null) {
-			getRestTemplate();
-		}	
+		getCustomChecklistFilePath();
+		
+		/*
+		 * if(restTemplate==null) { getRestTemplate(); }
+		 */	
 	}
 	
 	
+	private static String getCustomChecklistFilePath() {
+		String path = "";
+		try {
+		
+		ResultSet rs=  getInformixDbResults(CustomChecklistDAO.GET_CUSTOM_CHECKLIST_FILE_PATH);
+		if(rs!=null) {
+			path = rs.getString(1);
+		}
+		
+		}
+		catch(Exception e) {
+			logger.debug("Exception in getCustomChecklistFilePath");
+		}
+		return path;
+		
+		
+	}
+
+
 	public static void getRestTemplate() {
 		restTemplate = new RestTemplate();
 		List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();        
@@ -51,12 +72,15 @@ public class CustomChecklistBatch {
 	                Statement statement = connection.createStatement();) {
 	            rs = statement.executeQuery(query);
 	           if(rs==null) {
-	        	   // add logger or do something 
+	        	 return null;
+	        	 
+	           }else {
+	        	   return rs;
 	           }
 	        	   	
 	        }
 	        catch (Exception e) {
-	        	
+	        	e.printStackTrace();
 	        }
 		return rs;
 	}

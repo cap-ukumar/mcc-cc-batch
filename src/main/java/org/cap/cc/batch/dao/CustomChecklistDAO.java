@@ -47,11 +47,11 @@ public class CustomChecklistDAO {
 	
 
 	public static final String GET_DUPLEX_VALUE = "SELECT ptt_std_code_col.column_data_t\r\n"
-			+ "INTO ls_duplex_f\r\n"
-			+ "FROM ptt_standard_codes,\r\n"
+			+ "INTO ls_duplex_f"
+			+ "FROM ptt_standard_codes,"
 			+ "ptt_std_code_col\r\n"
-			+ "WHERE ptt_standard_codes.table_u  =  201\r\n"
-			+ "  AND ptt_standard_codes.key_u        = :as_print_set_detail_c\r\n"
+			+ "WHERE ptt_standard_codes.table_u  =  201 "
+			+ "  AND ptt_standard_codes.key_u        = ?"
 			+ "  AND ptt_std_code_col.column_type_u  = 'DUPLEXFLAG'\r\n"
 			+ "  AND ptt_standard_codes.table_u      = ptt_std_code_col.table_u\r\n"
 			+ "  AND ptt_standard_codes.key_u        = ptt_std_code_col.key_u\r\n"
