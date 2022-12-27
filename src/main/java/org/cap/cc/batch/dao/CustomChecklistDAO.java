@@ -8,21 +8,19 @@ public class CustomChecklistDAO {
 			+ " 3, \"Wednesday\", 4, \"Thursday\", 5, \"Friday\", 6, \"Saturday\", 0, \"Sunday\") "
 			+ " || \"/\" as FilePath "
 			+ " FROM ptt_std_code_col c147, "
-			+ "ptt_standard_codes s, \n"
-			+ "ptt_std_code_col c1\n"
-			+ "   WHERE      c147.table_u = 147  \n"
-			+ "   	AND Trim(c147.key_u) = \"39\"\n"
-			+ "   	AND Trim(c147.column_type_u)  = \"PATH\" \n"
-			+ "   	AND s.table_u = 1\n"
-			+ "AND s.key_u = \"LAPCURRDT\" \n"
-			+ "	AND current BETWEEN s.effective_dt and s.termination_dt\n"
-			+ "	AND s.table_u = c1.table_u\n"
-			+ "	AND s.key_u = c1.key_u\n"
-			+ "	AND c1.column_type_u = \"DATE\"  \n"
-			+ "	AND c1.column_data_t IS NOT NULL\n"
-			+ "	AND trim(c1.column_data_t) <> \"\"\n"
-			+ ";\n"
-			+ "";
+			+ " ptt_standard_codes s, "
+			+ " ptt_std_code_col c1 "
+			+ " WHERE c147.table_u = 147  "
+			+ " AND Trim(c147.key_u) = \"39\" "
+			+ " AND Trim(c147.column_type_u)  = \"PATH\" "
+			+ " AND s.table_u = 1 "
+			+ " AND s.key_u = \"LAPCURRDT\" "
+			+ "	AND current BETWEEN s.effective_dt and s.termination_dt "
+			+ "	AND s.table_u = c1.table_u "
+			+ "	AND s.key_u = c1.key_u "
+			+ "	AND c1.column_type_u = \"DATE\" "
+			+ "	AND c1.column_data_t IS NOT NULL "
+			+ "	AND trim(c1.column_data_t) <> \"\" ;";
 	
 	public static final String GET_TASK_ID ="SELECT Min (t.task_u)\n"
 			+ "FROM	ptt_task t,\n"
@@ -203,6 +201,29 @@ public class CustomChecklistDAO {
 			+ "AND (G.addtnl_data_u = A.addtnl_data_u AND G.addtnl_data_fld_c = 'SEQNBR')\n"
 			+ "\n"
 			+ ";";
+	
+	public static final String GET_CAP_DOMAIN="SELECT Trim(cc.column_data_t) "
+			+ " AS ls_domain "
+			+ " FROM ptt_standard_codes sc, "
+			+ " ptt_std_code_col cc "
+			+ " WHERE sc.table_u = 569 "
+			+ " AND cc.table_u = sc.table_u "
+			+ " AND sc.key_u = \"04\" "
+			+ " AND sc.active_s = \"A\" "
+			+ " AND cc.key_u = sc.key_u "
+			+ " AND cc.column_type_u = \"WEBSETTING\" ;";
+			
+	public static final String GET_CHECKLIST_WEBSERVICE_URL="SELECT Trim( ptt_std_code_col.column_data_t ) "
+			+ " AS ls_url "
+			+ " FROM	ptt_std_code_col, "
+			+ "	ptt_standard_codes "
+			+ " WHERE ( ptt_standard_codes.table_u = ptt_std_code_col.table_u ) and "
+			+ "	( ptt_standard_codes.key_u = ptt_std_code_col.key_u ) and "
+			+ "	( ptt_standard_codes.effective_dt = ptt_std_code_col.effective_dt ) and "
+			+ "	( current BETWEEN ptt_standard_codes.effective_dt and ptt_standard_codes.termination_dt ) and "
+			+ "	( ( ptt_std_code_col.table_u = 147 ) and "
+			+ "	( ptt_standard_codes.key_u = 5 ) and "
+			+ "	( ptt_std_code_col.column_type_u = 'CHKLST' ) ) ;";
 
 
 
