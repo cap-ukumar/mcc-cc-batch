@@ -13,55 +13,60 @@ import org.cap.cc.batch.dao.CustomChecklistDAO;
 
 public class BasicChecklistEntity {
 
-	private String itemSeqNo;
-	private String chkList;
-	private String auId;
-	private String suAbe;
+	private Integer task_u;
+	private Integer item_seq_no;
+	private Integer au_id;
+	private Integer su_id;
+	private String module;
 	private String edition;
-	private Timestamp chkLstDate;
-	private String cycleSeqNo;
-	private String packetType;
+	private Timestamp chklst_dt;
+	private Integer cycle_seq_no;
+	private String packet_type;
 	private String print_set_detail_c;
-	private String taskId;
+	private Integer tot_crit;
+	private Integer tot_ph1;
+	private Integer tot_ph2;
+	private String chklst_file_name;
+	private String chklst_prn_file;
 
-	public String getTaskId() {
-		return taskId;
+	public Integer getTask_u() {
+		return task_u;
 	}
 
-	public void setTaskId(String taskId) {
-		this.taskId = taskId;
+	public void setTask_u(Integer task_u) {
+		this.task_u = task_u;
 	}
 
-	public String getItemSeqNo() {
-		return itemSeqNo;
+	public Integer getItem_seq_no() {
+		return item_seq_no;
 	}
 
-	public void setItemSeqNo(String itemSeqNo) {
-		this.itemSeqNo = itemSeqNo;
+	public void setItem_seq_no(Integer item_seq_no) {
+		this.item_seq_no = item_seq_no;
 	}
 
-	public String getChkList() {
-		return chkList;
+	public Integer getAu_id() {
+		return au_id;
 	}
 
-	public void setChkList(String chkList) {
-		this.chkList = chkList;
+	public void setAu_id(Integer au_id) {
+		this.au_id = au_id;
 	}
 
-	public String getAuId() {
-		return auId;
+	public Integer getSu_id() {
+		return su_id;
 	}
 
-	public void setAuId(String auId) {
-		this.auId = auId;
+	public void setSu_id(Integer su_id) {
+		this.su_id = su_id;
 	}
 
-	public String getSuAbe() {
-		return suAbe;
+	public String getModule() {
+		return module;
 	}
 
-	public void setSuAbe(String suAbe) {
-		this.suAbe = suAbe;
+	public void setModule(String module) {
+		this.module = module;
 	}
 
 	public String getEdition() {
@@ -72,28 +77,28 @@ public class BasicChecklistEntity {
 		this.edition = edition;
 	}
 
-	public Timestamp getChkLstDate() {
-		return chkLstDate;
+	public Timestamp getChklst_dt() {
+		return chklst_dt;
 	}
 
-	public void setChkLstDate(Timestamp chkLstDate) {
-		this.chkLstDate = chkLstDate;
+	public void setChklst_dt(Timestamp chklst_dt) {
+		this.chklst_dt = chklst_dt;
 	}
 
-	public String getCycleSeqNo() {
-		return cycleSeqNo;
+	public Integer getCycle_seq_no() {
+		return cycle_seq_no;
 	}
 
-	public void setCycleSeqNo(String cycleSeqNo) {
-		this.cycleSeqNo = cycleSeqNo;
+	public void setCycle_seq_no(Integer cycle_seq_no) {
+		this.cycle_seq_no = cycle_seq_no;
 	}
 
-	public String getPacketType() {
-		return packetType;
+	public String getPacket_type() {
+		return packet_type;
 	}
 
-	public void setPacketType(String packetType) {
-		this.packetType = packetType;
+	public void setPacket_type(String packet_type) {
+		this.packet_type = packet_type;
 	}
 
 	public String getPrint_set_detail_c() {
@@ -104,35 +109,76 @@ public class BasicChecklistEntity {
 		this.print_set_detail_c = print_set_detail_c;
 	}
 
-	@Override
-	public String toString() {
-		return "BasicChecklistEntity [itemSeqNo=" + itemSeqNo + ", chkList=" + chkList + ", auId=" + auId + ", suAbe="
-				+ suAbe + ", edition=" + edition + ", chkLstDate=" + chkLstDate + ", cycleSeqNo=" + cycleSeqNo
-				+ ", packetType=" + packetType + ", print_set_detail_c=" + print_set_detail_c + ", taskId=" + taskId
-				+ "]";
+	public Integer getTot_crit() {
+		return tot_crit;
 	}
 
-	public List<BasicChecklistEntity> getBasicChecklistDetails(int taskId) {
+	public void setTot_crit(Integer tot_crit) {
+		this.tot_crit = tot_crit;
+	}
+
+	public Integer getTot_ph1() {
+		return tot_ph1;
+	}
+
+	public void setTot_ph1(Integer tot_ph1) {
+		this.tot_ph1 = tot_ph1;
+	}
+
+	public Integer getTot_ph2() {
+		return tot_ph2;
+	}
+
+	public void setTot_ph2(Integer tot_ph2) {
+		this.tot_ph2 = tot_ph2;
+	}
+
+	public String getChklst_file_name() {
+		return chklst_file_name;
+	}
+
+	public void setChklst_file_name(String chklst_file_name) {
+		this.chklst_file_name = chklst_file_name;
+	}
+
+	public String getChklst_prn_file() {
+		return chklst_prn_file;
+	}
+
+	public void setChklst_prn_file(String chklst_prn_file) {
+		this.chklst_prn_file = chklst_prn_file;
+	}
+
+	@Override
+	public String toString() {
+		return "BasicChecklistEntity [task_u=" + task_u + ", item_seq_no=" + item_seq_no + ", au_id=" + au_id
+				+ ", su_id=" + su_id + ", module=" + module + ", edition=" + edition + ", chklst_dt=" + chklst_dt
+				+ ", cycle_seq_no=" + cycle_seq_no + ", packet_type=" + packet_type + ", print_set_detail_c="
+				+ print_set_detail_c + ", tot_crit=" + tot_crit + ", tot_ph1=" + tot_ph1 + ", tot_ph2=" + tot_ph2
+				+ ", chklst_file_name=" + chklst_file_name + ", chklst_prn_file=" + chklst_prn_file + "]";
+	}
+
+	public static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
 		ResultSet rs = null;
-		List<BasicChecklistEntity> list = new ArrayList<>();
-		try (Connection con = DriverManager.getConnection(auId);
-				PreparedStatement ps = con.prepareStatement(CustomChecklistDAO.GET_BASIC_CHECKLIST_DETAILS);) {
+		List<BasicChecklistEntity> list = null;
+		try (PreparedStatement ps = con.prepareStatement(CustomChecklistDAO.GET_BASIC_CHECKLIST_DETAILS);) {
 			ps.setInt(1, taskId);
-			rs = ps.executeQuery();			
-			while (rs.next()) {
-				BasicChecklistEntity pojo = new BasicChecklistEntity();
-				pojo.setItemSeqNo(rs.getString("ITEMSEQNO"));
-				pojo.setChkList(rs.getString("CHKLIST"));
-				pojo.setAuId(rs.getString("AUID"));
-				pojo.setSuAbe(rs.getString("SUABE"));
-				pojo.setEdition(rs.getString("EDITION"));
-				pojo.setChkLstDate(rs.getTimestamp("CHKLSTDATE"));
-				pojo.setCycleSeqNo(rs.getString("CYCLESEQNO"));
-				pojo.setPacketType(rs.getString("PACKETTYPE"));
-				pojo.setPrint_set_detail_c(rs.getString("print_set_detail_c"));
-				list.add(pojo);
+			rs = ps.executeQuery();
+			if (null != rs)
+				list = new ArrayList<>();
+			while (null != rs && rs.next()) {
+				BasicChecklistEntity obj = new BasicChecklistEntity();
+				obj.setItem_seq_no(rs.getInt("ITEMSEQNO"));
+				obj.setModule(rs.getString("CHKLIST"));
+				obj.setAu_id(rs.getInt("AUID"));
+				obj.setSu_id(rs.getInt("SUABE"));
+				obj.setEdition(rs.getString("EDITION"));
+				obj.setChklst_dt(rs.getTimestamp("CHKLSTDATE"));
+				obj.setCycle_seq_no(rs.getInt("CYCLESEQNO"));
+				obj.setPacket_type(rs.getString("PACKETTYPE"));
+				obj.setPrint_set_detail_c(rs.getString("print_set_detail_c"));
+				list.add(obj);
 			}
-			System.out.println(list);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

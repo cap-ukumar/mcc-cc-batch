@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.cap.cc.batch.dao.CustomChecklistDAO;
+import org.cap.cc.batch.model.BasicChecklistEntity;
 import org.cap.cc.batch.utils.CapConfigConstants;
 import org.cap.cc.batch.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -31,17 +32,27 @@ public class CustomChecklistBatch {
 		createInformixDbConnection();
 		
 		//Get CustomChecklist FilePath
-		String customChecklistFilePath = getCustomChecklistFilePath();
+		final String customChecklistFilePath = getCustomChecklistFilePath();
 		if(null!=customChecklistFilePath && !customChecklistFilePath.isBlank())
-			logger.info(customChecklistFilePath);
+			logger.info("filePath: {}",customChecklistFilePath);
 		
 		//Get Available TaskId
-		int taskId;
+		final Integer taskId = getAvailableTaskId();
+		if(null!=taskId)
+			logger.info("taskId: {}",taskId);
 		
+		//Update User_u of ptt_task
 		
-		//remove DB connections
+		//Get Basic Checklist Details
+		final List<BasicChecklistEntity> checklists = BasicChecklistEntity.getBasicChecklistDetails(INFORMIX_CONNECTION, taskId);
+		if(null!=checklists)
+			logger.info("BasicChecklists: {}",checklists);
 		
+		//
+		
+		//remove DB connections		
 		removeConnections();
+		
 		/*
 		 * if(restTemplate==null) { getRestTemplate(); }
 		 */
@@ -64,13 +75,27 @@ public class CustomChecklistBatch {
 		ResultSet rs=null;
 		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
 			rs=st.executeQuery(CustomChecklistDAO.GET_CUSTOM_CHECKLIST_FILE_PATH);
-			while(rs.next()) {
+			while(null!=rs && rs.next()) {
 				path=rs.getString(1);
 			}
 		} catch (Exception e) {
 			logger.debug("Exception in getCustomChecklistFilePath");
 		}
 		return path;
+	}
+
+	private static Integer getAvailableTaskId() {
+		Integer taskId = null;
+		ResultSet rs=null;
+		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
+			rs=st.executeQuery(CustomChecklistDAO.GET_TASK_ID);
+			while(null!=rs && rs.next()) {
+				taskId=rs.getInt(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getCustomChecklistFilePath");
+		}
+		return taskId;
 	}
 
 	public static void getRestTemplate() {

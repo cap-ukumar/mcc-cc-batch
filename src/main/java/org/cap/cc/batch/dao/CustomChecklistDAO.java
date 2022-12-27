@@ -188,7 +188,7 @@ public class CustomChecklistDAO {
 			+ "	lpt_addtnl_d_value F,\n"
 			+ "	lpt_addtnl_d_value G\n"
 			+ "\n"
-			+ "WHERE (M.task_u = 38453013 ) \n"
+			+ "WHERE (M.task_u = ? ) \n"
 			+ "AND (M.print_set_detail_c like 'CHECKLST%' OR M.print_set_detail_c like 'CHECKLIST%') \n"
 			+ "AND M.print_set_detail_c = P.key_u\n"
 			+ "AND P.table_u = 201  \n"
