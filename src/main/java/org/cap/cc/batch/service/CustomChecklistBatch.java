@@ -67,9 +67,6 @@ public class CustomChecklistBatch {
 		final String ccWebServiceUrl = getCustomChecklistWebServiceUrl();
 		if(null!=ccWebServiceUrl && !ccWebServiceUrl.isBlank())
 			logger.info("WebService-Url: {}",ccWebServiceUrl);
-		
-		//remove DB connections		
-		removeConnections();
 
 		
 		String staplevalue=getStapleValue();
@@ -83,11 +80,16 @@ public class CustomChecklistBatch {
 		String media=getMediaType();
 		logger.info(media);
 		
-		String packettype="";
+		String packettype="SELFEVLPKT";
 		CheckListChannelEntity channel=getContentChannel(packettype);
 		logger.info(channel.toString());
+		
+		//Get Job Status Polling Interval
+		Integer pollingInterval = getPollingInterval();
+		logger.info("pollingInterval: {}",pollingInterval);
+		
+		
 		// remove DB connections
-
 		removeConnections();
 	}
 		/*
@@ -195,7 +197,7 @@ public class CustomChecklistBatch {
 				chetity =new CheckListChannelEntity();
 				chetity.setContent(rs.getString(1));
 				chetity.setChannel(rs.getString(2));
-				
+				logger.info(rs.getString(1));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -245,6 +247,39 @@ public class CustomChecklistBatch {
 		}
 		return url;
 	}
+
+	/*
+		 * if(restTemplate==null) { getRestTemplate(); }
+		 */
+	
+	
+	private static Integer getPollingInterval() {
+		Integer pollingInterval = null;
+		ResultSet rs=null;
+		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
+			rs=st.executeQuery(CustomChecklistDAO.GET_JOB_STATUS_POLLING_INTERVAL);
+			while(null!=rs && rs.next()) {
+				pollingInterval=rs.getInt(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getPollingInterval");
+			e.printStackTrace();
+		}
+		return pollingInterval;
+	}
+	
+	private static int updateUser_u_column(int programId, int taskId) {
+		Integer result = null;
+		try(PreparedStatement st=INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.UPDATE_USER_U);){
+			st.setInt(1, programId);
+			st.setInt(2, taskId);
+			result=st.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
 
 	public static void getRestTemplate() {
 		restTemplate = new RestTemplate();
