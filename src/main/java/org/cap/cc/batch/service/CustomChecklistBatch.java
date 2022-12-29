@@ -70,15 +70,15 @@ public class CustomChecklistBatch {
 
 		
 		String staplevalue=getStapleValue();
-		logger.info(staplevalue);
+		logger.info("Staple value: {}",staplevalue);
 		
 		
 		String color=getMediaColor();
-		logger.info(color);
+		logger.info("Media color: {}",color);
 		
 		
 		String media=getMediaType();
-		logger.info(media);
+		logger.info("Media Type: {}",media);
 		
 		String packettype="SELFEVLPKT";
 		CheckListChannelEntity channel=getContentChannel(packettype);
@@ -87,6 +87,12 @@ public class CustomChecklistBatch {
 		//Get Job Status Polling Interval
 		Integer pollingInterval = getPollingInterval();
 		logger.info("pollingInterval: {}",pollingInterval);
+		
+		String chkinsp=getChecklistInspectorChannel();
+		logger.info("Checklist inspector: {}",chkinsp);
+		
+		Integer Iteration = getJobIterations();
+		logger.info("Iterations: {}",Iteration);
 		
 		
 		// remove DB connections
@@ -278,6 +284,37 @@ public class CustomChecklistBatch {
 			e.printStackTrace();
 		}
 		return result;
+	}
+	
+	
+	
+	private static String getChecklistInspectorChannel() {
+		String inspector = null;
+		ResultSet rs = null;
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_CHECKLIST_INSPECTOR_CHANNEL);) {
+			st.setString(1, "06152009");
+			rs = st.executeQuery();
+			while (rs.next()) {
+				inspector = rs.getString(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getchecklistinspectorchannel");
+		}
+		return inspector;
+	}
+	
+	private static Integer getJobIterations() {
+		Integer iteration = null;
+		ResultSet rs=null;
+		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
+			rs=st.executeQuery(CustomChecklistDAO.GET_JOB_COMPLETION_ITERATIONS);
+			while(null!=rs && rs.next()) {
+				iteration=rs.getInt(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getJobIterations");
+		}
+		return iteration;
 	}
 	
 
