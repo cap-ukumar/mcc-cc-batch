@@ -67,27 +67,35 @@ public class CustomChecklistBatch {
 		final String ccWebServiceUrl = getCustomChecklistWebServiceUrl();
 		if(null!=ccWebServiceUrl && !ccWebServiceUrl.isBlank())
 			logger.info("WebService-Url: {}",ccWebServiceUrl);
-		
-		//remove DB connections		
-		removeConnections();
 
 		
 		String staplevalue=getStapleValue();
-		logger.info(staplevalue);
+		logger.info("Staple value: {}",staplevalue);
 		
 		
 		String color=getMediaColor();
-		logger.info(color);
+		logger.info("Media color: {}",color);
 		
 		
 		String media=getMediaType();
-		logger.info(media);
+		logger.info("Media Type: {}",media);
 		
-		String packettype="";
+		String packettype="SELFEVLPKT";
 		CheckListChannelEntity channel=getContentChannel(packettype);
 		logger.info(channel.toString());
+		
+		//Get Job Status Polling Interval
+		Integer pollingInterval = getPollingInterval();
+		logger.info("pollingInterval: {}",pollingInterval);
+		
+		String chkinsp=getChecklistInspectorChannel();
+		logger.info("Checklist inspector: {}",chkinsp);
+		
+		Integer Iteration = getJobIterations();
+		logger.info("Iterations: {}",Iteration);
+		
+		
 		// remove DB connections
-
 		removeConnections();
 	}
 		/*
@@ -195,7 +203,7 @@ public class CustomChecklistBatch {
 				chetity =new CheckListChannelEntity();
 				chetity.setContent(rs.getString(1));
 				chetity.setChannel(rs.getString(2));
-				
+				logger.info(rs.getString(1));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -245,6 +253,70 @@ public class CustomChecklistBatch {
 		}
 		return url;
 	}
+
+	/*
+		 * if(restTemplate==null) { getRestTemplate(); }
+		 */
+	
+	
+	private static Integer getPollingInterval() {
+		Integer pollingInterval = null;
+		ResultSet rs=null;
+		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
+			rs=st.executeQuery(CustomChecklistDAO.GET_JOB_STATUS_POLLING_INTERVAL);
+			while(null!=rs && rs.next()) {
+				pollingInterval=rs.getInt(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getPollingInterval");
+			e.printStackTrace();
+		}
+		return pollingInterval;
+	}
+	
+	private static int updateUser_u_column(int programId, int taskId) {
+		Integer result = null;
+		try(PreparedStatement st=INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.UPDATE_USER_U);){
+			st.setInt(1, programId);
+			st.setInt(2, taskId);
+			result=st.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	
+	
+	private static String getChecklistInspectorChannel() {
+		String inspector = null;
+		ResultSet rs = null;
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_CHECKLIST_INSPECTOR_CHANNEL);) {
+			st.setString(1, "06152009");
+			rs = st.executeQuery();
+			while (rs.next()) {
+				inspector = rs.getString(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getchecklistinspectorchannel");
+		}
+		return inspector;
+	}
+	
+	private static Integer getJobIterations() {
+		Integer iteration = null;
+		ResultSet rs=null;
+		try(Statement st=INFORMIX_CONNECTION.createStatement();) {			
+			rs=st.executeQuery(CustomChecklistDAO.GET_JOB_COMPLETION_ITERATIONS);
+			while(null!=rs && rs.next()) {
+				iteration=rs.getInt(1);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getJobIterations");
+		}
+		return iteration;
+	}
+	
 
 	public static void getRestTemplate() {
 		restTemplate = new RestTemplate();
