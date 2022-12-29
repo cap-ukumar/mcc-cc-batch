@@ -13,149 +13,148 @@ import org.cap.cc.batch.dao.CustomChecklistDAO;
 
 public class BasicChecklistEntity {
 
-	private Integer task_u;
-	private Integer item_seq_no;
-	private Integer au_id;
-	private Integer su_id;
-	private String module;
-	private String edition;
-	private Timestamp chklst_dt;
-	private Integer cycle_seq_no;
-	private String packet_type;
-	private String print_set_detail_c;
-	private Integer tot_crit;
-	private Integer tot_ph1;
-	private Integer tot_ph2;
-	private String chklst_file_name;
-	private String chklst_prn_file;
-
-	public Integer getTask_u() {
-		return task_u;
+	private static String USERNAME;
+	private static final String PASSWORD = "";
+	private String editionId;
+	private String moduleId;
+	private Integer auId;
+	private Integer suId;
+	private Timestamp actEffectiveDt;
+	private String outputOptions;
+	private String channelData;
+	private PrinterData printerData;
+	private Integer taskU;
+	private Integer itemSeqNo;
+	private Integer cycleSeqNo;
+	private String packetType;
+	private String printSetDetailC;
+	
+	private static String getUSERNAME() {
+		return BasicChecklistEntity.USERNAME;
+	}
+	
+	public static void setUSERNAME(String userName) {
+		BasicChecklistEntity.USERNAME=userName;
+	}
+	
+	public String getEditionId() {
+		return editionId;
 	}
 
-	public void setTask_u(Integer task_u) {
-		this.task_u = task_u;
+	public void setEditionId(String editionId) {
+		this.editionId = editionId;
 	}
 
-	public Integer getItem_seq_no() {
-		return item_seq_no;
+	public String getModuleId() {
+		return moduleId;
 	}
 
-	public void setItem_seq_no(Integer item_seq_no) {
-		this.item_seq_no = item_seq_no;
+	public void setModuleId(String moduleId) {
+		this.moduleId = moduleId;
 	}
 
-	public Integer getAu_id() {
-		return au_id;
+	public Integer getAuId() {
+		return auId;
 	}
 
-	public void setAu_id(Integer au_id) {
-		this.au_id = au_id;
+	public void setAuId(Integer auId) {
+		this.auId = auId;
 	}
 
-	public Integer getSu_id() {
-		return su_id;
+	public Integer getSuId() {
+		return suId;
 	}
 
-	public void setSu_id(Integer su_id) {
-		this.su_id = su_id;
+	public void setSuId(Integer suId) {
+		this.suId = suId;
 	}
 
-	public String getModule() {
-		return module;
+	public Timestamp getActEffectiveDt() {
+		return actEffectiveDt;
 	}
 
-	public void setModule(String module) {
-		this.module = module;
+	public void setActEffectiveDt(Timestamp actEffectiveDt) {
+		this.actEffectiveDt = actEffectiveDt;
 	}
 
-	public String getEdition() {
-		return edition;
+	public String getOutputOptions() {
+		return outputOptions;
 	}
 
-	public void setEdition(String edition) {
-		this.edition = edition;
+	public void setOutputOptions(String outputOptions) {
+		this.outputOptions = outputOptions;
 	}
 
-	public Timestamp getChklst_dt() {
-		return chklst_dt;
+	public String getChannelData() {
+		return channelData;
 	}
 
-	public void setChklst_dt(Timestamp chklst_dt) {
-		this.chklst_dt = chklst_dt;
+	public void setChannelData(String channelData) {
+		this.channelData = channelData;
 	}
 
-	public Integer getCycle_seq_no() {
-		return cycle_seq_no;
+	public PrinterData getPrinterData() {
+		return printerData;
 	}
 
-	public void setCycle_seq_no(Integer cycle_seq_no) {
-		this.cycle_seq_no = cycle_seq_no;
+	public void setPrinterData(PrinterData printerData) {
+		this.printerData = printerData;
 	}
 
-	public String getPacket_type() {
-		return packet_type;
+	public Integer getTaskU() {
+		return taskU;
 	}
 
-	public void setPacket_type(String packet_type) {
-		this.packet_type = packet_type;
+	public void setTaskU(Integer taskU) {
+		this.taskU = taskU;
 	}
 
-	public String getPrint_set_detail_c() {
-		return print_set_detail_c;
+	public Integer getItemSeqNo() {
+		return itemSeqNo;
 	}
 
-	public void setPrint_set_detail_c(String print_set_detail_c) {
-		this.print_set_detail_c = print_set_detail_c;
+	public void setItemSeqNo(Integer itemSeqNo) {
+		this.itemSeqNo = itemSeqNo;
 	}
 
-	public Integer getTot_crit() {
-		return tot_crit;
+	public Integer getCycleSeqNo() {
+		return cycleSeqNo;
 	}
 
-	public void setTot_crit(Integer tot_crit) {
-		this.tot_crit = tot_crit;
+	public void setCycleSeqNo(Integer cycleSeqNo) {
+		this.cycleSeqNo = cycleSeqNo;
 	}
 
-	public Integer getTot_ph1() {
-		return tot_ph1;
+	public String getPacketType() {
+		return packetType;
 	}
 
-	public void setTot_ph1(Integer tot_ph1) {
-		this.tot_ph1 = tot_ph1;
+	public void setPacketType(String packetType) {
+		this.packetType = packetType;
 	}
 
-	public Integer getTot_ph2() {
-		return tot_ph2;
+	public String getPrintSetDetailC() {
+		return printSetDetailC;
 	}
 
-	public void setTot_ph2(Integer tot_ph2) {
-		this.tot_ph2 = tot_ph2;
-	}
-
-	public String getChklst_file_name() {
-		return chklst_file_name;
-	}
-
-	public void setChklst_file_name(String chklst_file_name) {
-		this.chklst_file_name = chklst_file_name;
-	}
-
-	public String getChklst_prn_file() {
-		return chklst_prn_file;
-	}
-
-	public void setChklst_prn_file(String chklst_prn_file) {
-		this.chklst_prn_file = chklst_prn_file;
+	public void setPrintSetDetailC(String printSetDetailC) {
+		this.printSetDetailC = printSetDetailC;
 	}
 
 	@Override
 	public String toString() {
-		return "BasicChecklistEntity [task_u=" + task_u + ", item_seq_no=" + item_seq_no + ", au_id=" + au_id
-				+ ", su_id=" + su_id + ", module=" + module + ", edition=" + edition + ", chklst_dt=" + chklst_dt
-				+ ", cycle_seq_no=" + cycle_seq_no + ", packet_type=" + packet_type + ", print_set_detail_c="
-				+ print_set_detail_c + ", tot_crit=" + tot_crit + ", tot_ph1=" + tot_ph1 + ", tot_ph2=" + tot_ph2
-				+ ", chklst_file_name=" + chklst_file_name + ", chklst_prn_file=" + chklst_prn_file + "]";
+		return "{\r\n"
+				+ "\"userName\":\""+this.getUSERNAME()+ "\",\r\n"
+				+ "\"password\":\""+BasicChecklistEntity.PASSWORD+"\",\r\n"
+				+ "\"editionId\":\""+getEditionId()+"\",\r\n"
+				+ "\"moduleId\":\""+getModuleId()+"\",\r\n"
+				+ "\"auId\":\""+getAuId()+"\",\r\n"
+				+ "\"suId\":\""+getSuId()+"\",\r\n"
+				+ "\"actEffectiveDt\":\""+getActEffectiveDt()+"\",\r\n"
+				+ "\"outputOptions\":\""+getOutputOptions()+"\",\r\n"
+				+ "\"channelData\":\""+getChannelData()+"\",\r\n"
+				+ " "+getPrinterData()
+				+ " }";
 	}
 
 	public static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
@@ -168,15 +167,15 @@ public class BasicChecklistEntity {
 				list = new ArrayList<>();
 			while (null != rs && rs.next()) {
 				BasicChecklistEntity obj = new BasicChecklistEntity();
-				obj.setItem_seq_no(rs.getInt("ITEMSEQNO"));
-				obj.setModule(rs.getString("CHKLIST"));
-				obj.setAu_id(rs.getInt("AUID"));
-				obj.setSu_id(rs.getInt("SUABE"));
-				obj.setEdition(rs.getString("EDITION"));
-				obj.setChklst_dt(rs.getTimestamp("CHKLSTDATE"));
-				obj.setCycle_seq_no(rs.getInt("CYCLESEQNO"));
-				obj.setPacket_type(rs.getString("PACKETTYPE"));
-				obj.setPrint_set_detail_c(rs.getString("print_set_detail_c"));
+				obj.setItemSeqNo(rs.getInt("ITEMSEQNO"));
+				obj.setModuleId(rs.getString("CHKLIST"));
+				obj.setAuId(rs.getInt("AUID"));
+				obj.setSuId(rs.getInt("SUABE"));
+				obj.setEditionId(rs.getString("EDITION"));
+				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE"));
+				obj.setCycleSeqNo(rs.getInt("CYCLESEQNO"));
+				obj.setPacketType(rs.getString("PACKETTYPE"));
+				obj.setPrintSetDetailC(rs.getString("print_set_detail_c"));
 				list.add(obj);
 			}
 		} catch (SQLException e) {
