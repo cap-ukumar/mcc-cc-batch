@@ -222,7 +222,15 @@ public class CustomChecklistDAO {
 			+ "	( ptt_standard_codes.key_u = 5 ) and "
 			+ "	( ptt_std_code_col.column_type_u = 'CHKLST' ) ) ;";
 
-
+	public static final String GET_JOB_STATUS_POLLING_INTERVAL="SELECT TRIM(cc.column_data_t) / 1000 "
+			+ " FROM ptt_standard_codes sc, "
+			+ " ptt_std_code_col cc "
+			+ " WHERE sc.table_u = 569 "
+			+ " AND sc.key_u = \"09\" "
+			+ " AND cc.table_u = sc.table_u "
+			+ " AND cc.key_u = sc.key_u "
+			+ " AND cc.column_type_u = \"WEBSETTING\" "
+			+ " AND sc.active_s = \"A\" ;";
 
 
 }
