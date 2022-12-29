@@ -232,5 +232,22 @@ public class CustomChecklistDAO {
 			+ " AND cc.column_type_u = \"WEBSETTING\" "
 			+ " AND sc.active_s = \"A\" ;";
 
+	public static final String GET_CHECKLIST_INSPECTOR_CHANNEL="   SELECT chk_insr_chnl_f  \r\n"
+			+ "as ls_chk_insr_chnl_f\r\n"
+			+ "  FROM lpt_chklst_edition  \r\n"
+			+ "   WHERE chklst_edition_u = ? ; \r\n"
+			+ "";
+	
+	public static final String GET_JOB_COMPLETION_ITERATIONS="SELECT TRIM(cc.column_data_t) + 0\r\n"
+			+ "  as ll_iterations\r\n"
+			+ "  FROM ptt_standard_codes sc,\r\n"
+			+ "       ptt_std_code_col cc\r\n"
+			+ " WHERE sc.table_u = 569\r\n"
+			+ "   AND sc.key_u = \"11\"\r\n"
+			+ "   AND cc.table_u = sc.table_u\r\n"
+			+ "   AND cc.key_u = sc.key_u\r\n"
+			+ "   AND cc.column_type_u = \"WEBSETTING\"\r\n"
+			+ "   AND sc.active_s = \"A\" ;\r\n"
+			+ "";
 
 }
