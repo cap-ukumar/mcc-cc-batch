@@ -38,6 +38,7 @@ public class CustomChecklistDAO {
 	
 	public static final String UPDATE_USER_U = "UPDATE ptt_task "
 			+ "SET ptt_task.update_user_u = 'CUSTCHK', "
+			+ " special_instr_t = ? "
 			+ "	last_update_dt = current, "
 			+ "	update_pgm_c = :<ProgramID> "
 			+ "WHERE ptt_task.busn_activity_u = 'CO000200' AND "
