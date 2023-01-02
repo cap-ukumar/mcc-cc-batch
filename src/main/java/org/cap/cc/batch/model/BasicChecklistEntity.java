@@ -162,31 +162,4 @@ public class BasicChecklistEntity {
 				+ getPrinterData() + "}";
 	}
 
-	public static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
-		ResultSet rs = null;
-		List<BasicChecklistEntity> list = null;
-		try (PreparedStatement ps = con.prepareStatement(CustomChecklistDAO.GET_BASIC_CHECKLIST_DETAILS);) {
-			ps.setInt(1, taskId);
-			rs = ps.executeQuery();
-			if (null != rs)
-				list = new ArrayList<>();
-			while (null != rs && rs.next()) {
-				BasicChecklistEntity obj = new BasicChecklistEntity();
-				obj.setItemSeqNo(rs.getInt("ITEMSEQNO"));
-				obj.setModuleId(rs.getString("CHKLIST"));
-				obj.setAuId(rs.getInt("AUID"));
-				obj.setSuId(rs.getInt("SUABE"));
-				obj.setEditionId(rs.getString("EDITION"));
-				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE"));
-				obj.setCycleSeqNo(rs.getInt("CYCLESEQNO"));
-				obj.setPacketType(rs.getString("PACKETTYPE"));
-				obj.setPrintSetDetailC(rs.getString("print_set_detail_c"));
-				list.add(obj);
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return list;
-	}
-
 }
