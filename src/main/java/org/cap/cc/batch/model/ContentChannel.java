@@ -1,6 +1,6 @@
 package org.cap.cc.batch.model;
 
-public class CheckListChannelEntity {
+public class ContentChannel {
 	
 	private String content;
 	private String channel;
