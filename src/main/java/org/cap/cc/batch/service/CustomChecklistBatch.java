@@ -23,12 +23,15 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class CustomChecklistBatch {
 	private static RestTemplate restTemplate;
 
 	static Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
-	private static Connection INFORMIX_CONNECTION = null;
+	private static Connection INFORMIX_CONNECTION;
 
 	public static void processData() {
 
@@ -52,9 +55,6 @@ public class CustomChecklistBatch {
 		final String CAP_DOMAIN = getCapDomain();
 		if (null != CAP_DOMAIN && !CAP_DOMAIN.isBlank()) {
 			logger.info("CAP-Domain: {}", CAP_DOMAIN);
-			
-		// Set UserName for BasicChecklist Class
-			BasicChecklistEntity.setUSERNAME(CAP_DOMAIN);
 		}
 
 		// Get Checklist Webservice Url
@@ -75,6 +75,9 @@ public class CustomChecklistBatch {
 				ccTaskId);
 		if (null != checklists)
 			for (BasicChecklistEntity checklist : checklists) {
+				
+				// Set UserName for BasicChecklist Class
+				checklist.setUserName(CAP_DOMAIN);
 				
 				String printSetDetailC = checklist.getPrintSetDetailC();
 				String packetType = checklist.getPacketType();
@@ -136,7 +139,14 @@ public class CustomChecklistBatch {
 				// Set PrinterData for Checklist
 				checklist.setPrinterData(printerData);
 
-				logger.info("{}", checklist);
+				//Create Json request
+				try {
+					ObjectMapper mapper = new ObjectMapper();
+					String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(checklist);
+					logger.info("{}",jsonString);
+				} catch (JsonProcessingException e) {
+					e.printStackTrace();
+				}
 			}
 
 		// remove DB connections

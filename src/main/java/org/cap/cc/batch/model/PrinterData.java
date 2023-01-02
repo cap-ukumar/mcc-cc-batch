@@ -51,15 +51,15 @@ public class PrinterData {
 		this.duplex = duplex;
 	}
 
-	@Override
-	public String toString() {
+	
+	public String toJsonString() {
 		return "\"printerData\": {\r\n"
 				+ "	\"filePath\":\""+getFilePath()+"\",\r\n"
 				+ "	\"mediaColor\":\""+getMediaColor()+"\",\r\n"
 				+ "	\"mediaType\":\""+getMediaType()+"\",\r\n"
 				+ "	\"staple\":"+isStaple()+",\r\n"
 				+ "	\"duplex\":"+isDuplex()+"\r\n"
-				+ "	";
+				+ "}\r\n";
 	}
 
 }

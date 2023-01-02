@@ -11,10 +11,12 @@ import java.util.List;
 
 import org.cap.cc.batch.dao.CustomChecklistDAO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class BasicChecklistEntity {
 
-	private static String USERNAME;
-	private static final String PASSWORD = "";
+	private String userName;
+	private final String password = "";
 	private String editionId;
 	private String moduleId;
 	private Integer auId;
@@ -23,20 +25,29 @@ public class BasicChecklistEntity {
 	private String outputOptions;
 	private String channelData;
 	private PrinterData printerData;
+	@JsonIgnore
 	private Integer taskU;
+	@JsonIgnore
 	private Integer itemSeqNo;
+	@JsonIgnore
 	private Integer cycleSeqNo;
+	@JsonIgnore
 	private String packetType;
+	@JsonIgnore
 	private String printSetDetailC;
-	
-	private static String getUSERNAME() {
-		return BasicChecklistEntity.USERNAME;
+
+	public String getUserName() {
+		return this.userName;
 	}
-	
-	public static void setUSERNAME(String userName) {
-		BasicChecklistEntity.USERNAME=userName;
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
-	
+
+	public String getPassword() {
+		return password;
+	}
+
 	public String getEditionId() {
 		return editionId;
 	}
@@ -141,20 +152,14 @@ public class BasicChecklistEntity {
 		this.printSetDetailC = printSetDetailC;
 	}
 
-	@Override
-	public String toString() {
-		return "{\r\n"
-				+ "\"userName\":\""+this.getUSERNAME()+ "\",\r\n"
-				+ "\"password\":\""+BasicChecklistEntity.PASSWORD+"\",\r\n"
-				+ "\"editionId\":\""+getEditionId()+"\",\r\n"
-				+ "\"moduleId\":\""+getModuleId()+"\",\r\n"
-				+ "\"auId\":\""+getAuId()+"\",\r\n"
-				+ "\"suId\":\""+getSuId()+"\",\r\n"
-				+ "\"actEffectiveDt\":\""+getActEffectiveDt()+"\",\r\n"
-				+ "\"outputOptions\":\""+getOutputOptions()+"\",\r\n"
-				+ "\"channelData\":\""+getChannelData()+"\",\r\n"
-				+ " "+getPrinterData()
-				+ " }";
+	
+	public String toJsonString() {
+		return "\r\n{\r\n" + "\"userName\":\"" + this.getUserName() + "\",\r\n" + "\"password\":\"" + this.password
+				+ "\",\r\n" + "\"editionId\":\"" + getEditionId() + "\",\r\n" + "\"moduleId\":\"" + getModuleId()
+				+ "\",\r\n" + "\"auId\":\"" + getAuId() + "\",\r\n" + "\"suId\":\"" + getSuId() + "\",\r\n"
+				+ "\"actEffectiveDt\":\"" + getActEffectiveDt() + "\",\r\n" + "\"outputOptions\":\""
+				+ getOutputOptions() + "\",\r\n" + "\"channelData\":\"" + getChannelData() + "\",\r\n" + " "
+				+ getPrinterData() + "}";
 	}
 
 	public static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
