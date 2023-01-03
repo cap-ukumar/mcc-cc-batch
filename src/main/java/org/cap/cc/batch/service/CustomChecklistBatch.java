@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -120,8 +121,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			HttpPost request = new HttpPost(ccWebServiceUrl + "checklist" + "?type=custom&response=file");
 			// add request headers
 //			request.addHeader("custom-key", "mkyong");
-			
-			//Set json Entity
+			request.addHeader(HttpHeaders.CONTENT_TYPE,"application/json");
+
+			// Set json Entity
 			request.setEntity(new StringEntity(printJsonRequest(checklistRequest)));
 
 			try (CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -479,6 +481,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			ObjectMapper mapper = new ObjectMapper();
 			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(checklist);
 			logger.info("{}", jsonString);
+			jsonString = mapper.writeValueAsString(checklist);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
