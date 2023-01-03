@@ -9,7 +9,7 @@ public class CustomChecklistConstants {
 	public static final String GET_TASK_ID ="SELECT Min (t.task_u) FROM ptt_task t, lpt_print_set_item m WHERE t.task_u = m.task_u AND t.busn_activity_u = 'CO000200'  AND t.initiated_dt IS NOT NULL  AND t.started_dt IS NULL   AND t.completed_dt IS NULL  AND t.update_user_u <> 'CUSTCHK'  AND (m.print_set_detail_c like 'CHECKLST%'  OR m.print_set_detail_c like 'CHECKLIST%' ) ;";
 	
 	public static final String UPDATE_USER_U = "UPDATE ptt_task SET special_instr_t = ?, ptt_task.update_user_u = 'CUSTCHK', last_update_dt = current,\n"
-			+ " update_pgm_c = :<ProgramID> WHERE ptt_task.busn_activity_u = 'CO000200' AND ptt_task.task_u = :<task_u> AND ptt_task.update_user_u <> : 'CUSTCHK' ;";
+			+ " update_pgm_c = ? WHERE ptt_task.busn_activity_u = 'CO000200' AND ptt_task.task_u = ? AND ptt_task.update_user_u <> : 'CUSTCHK' ;";
 
 	public static final String GET_DUPLEX_VALUE = "SELECT ptt_std_code_col.column_data_t FROM ptt_standard_codes, ptt_std_code_col WHERE ptt_standard_codes.table_u = 201 AND ptt_standard_codes.key_u = ? AND ptt_std_code_col.column_type_u  = 'DUPLEXFLAG' AND ptt_standard_codes.table_u  = ptt_std_code_col.table_u AND ptt_standard_codes.key_u  = ptt_std_code_col.key_u AND ptt_standard_codes.effective_dt = ptt_std_code_col.effective_dt AND current between ptt_standard_codes.effective_dt AND ptt_standard_codes.termination_dt ;";
 	
@@ -34,5 +34,35 @@ public class CustomChecklistConstants {
 	public static final String GET_JOB_COMPLETION_ITERATIONS="SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
 	
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
+	
+	public static final int PROGRAM_ID = 3001;
+	
+	public static final String ITEM_SEQ_NO = "ITEMSEQNO";
+	
+	public static final String MODULE_ID = "CHKLIST";
+	
+	public static final String AU_ID = "AUID";
+	
+	public static final String SU_ID = "SUABE";
+	
+	public static final String EDITION_ID = "EDITION";
+	
+	public static final String ACT_EFFECTIVE_DT = "CHKLSTDATE";
+	
+	public static final String CYCLE_SEQ_NO = "CYCLESEQNO";
+	
+	public static final String PACKET_TYPE = "PACKETTYPE";
+	
+	public static final String PRINT_SET_DETAIL_C = "print_set_detail_c";
+	
+	public static final String LS_CONTENT = "ls_content";
+	
+	public static final String LS_CHANNEL = "ls_channel";
+	
+	public static final String CHECKLIST_INSPECTOR_FLAG = "y";
+	
+	public static final String CHECKLIST_INSPECTOR_CONTENT = "CUSTOM";
+	
+	public static final String CHECKLIST_INSPECTOR_CHANNEL = "PRNFINAL";
 
 }
