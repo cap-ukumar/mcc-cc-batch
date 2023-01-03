@@ -5,28 +5,59 @@ import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class BasicChecklistEntity {
+public class ChecklistRequest {
 
 	private String userName;
 	private final String password = "";
+
+	// edition
 	private String editionId;
+
+	// module
 	private String moduleId;
-	private Integer auId;
-	private Integer suId;
+
+	// au_id
+	private String auId;
+
+	// su_id
+	private String suId;
+
+	// chklst_dt
 	private String actEffectiveDt;
 	private String outputOptions;
 	private String channelData;
 	private PrinterData printerData;
+
+	// task_u
 	@JsonIgnore
 	private Integer taskU;
+
+	// item_seq_no
 	@JsonIgnore
 	private Integer itemSeqNo;
+
+	// cycle_seq_no
 	@JsonIgnore
 	private Integer cycleSeqNo;
+
+	// packet_type
 	@JsonIgnore
 	private String packetType;
+
 	@JsonIgnore
 	private String printSetDetailC;
+
+	// total_crit
+	@JsonIgnore
+	private int criticalQuestCnt;
+
+	// total_ph1
+	@JsonIgnore
+	private int phase1Cnt;
+
+	// total_ph2
+	@JsonIgnore
+	private int phase2Cnt;
 
 	public String getUserName() {
 		return this.userName;
@@ -56,19 +87,19 @@ public class BasicChecklistEntity {
 		this.moduleId = moduleId;
 	}
 
-	public Integer getAuId() {
+	public String getAuId() {
 		return auId;
 	}
 
-	public void setAuId(Integer auId) {
+	public void setAuId(String auId) {
 		this.auId = auId;
 	}
 
-	public Integer getSuId() {
+	public String getSuId() {
 		return suId;
 	}
 
-	public void setSuId(Integer suId) {
+	public void setSuId(String suId) {
 		this.suId = suId;
 	}
 
@@ -144,7 +175,6 @@ public class BasicChecklistEntity {
 		this.printSetDetailC = printSetDetailC;
 	}
 
-	
 	public String toJsonString() {
 		return "\r\n{\r\n" + "\"userName\":\"" + this.getUserName() + "\",\r\n" + "\"password\":\"" + this.password
 				+ "\",\r\n" + "\"editionId\":\"" + getEditionId() + "\",\r\n" + "\"moduleId\":\"" + getModuleId()
