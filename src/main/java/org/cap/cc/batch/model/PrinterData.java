@@ -8,11 +8,22 @@ public class PrinterData {
 	private boolean staple;
 	private boolean duplex;
 
+	public PrinterData() {
+	}
+
+	public PrinterData(String filePath, String mediaColor, String mediaType, boolean staple, boolean duplex) {
+		this.filePath = filePath;
+		this.mediaColor = mediaColor;
+		this.mediaType = mediaType;
+		this.staple = staple;
+		this.duplex = duplex;
+	}
+
 	public String getFilePath() {
 		return filePath;
 	}
 
-	public void setFilePath(String filePath, Integer taskId, Integer itemSeqNo, Integer auId, Integer suId,
+	public void setFilePath(String filePath, Integer taskId, Integer itemSeqNo, String auId, String suId,
 			String moduleId, String editionId) {
 		String path = filePath + taskId + "_" + itemSeqNo + "_" + auId + "_" + suId + "_" + moduleId + "_" + editionId
 				+ ".pdf";
@@ -51,15 +62,10 @@ public class PrinterData {
 		this.duplex = duplex;
 	}
 
-	
 	public String toJsonString() {
-		return "\"printerData\": {\r\n"
-				+ "	\"filePath\":\""+getFilePath()+"\",\r\n"
-				+ "	\"mediaColor\":\""+getMediaColor()+"\",\r\n"
-				+ "	\"mediaType\":\""+getMediaType()+"\",\r\n"
-				+ "	\"staple\":"+isStaple()+",\r\n"
-				+ "	\"duplex\":"+isDuplex()+"\r\n"
-				+ "}\r\n";
+		return "\"printerData\": {\r\n" + "	\"filePath\":\"" + getFilePath() + "\",\r\n" + "	\"mediaColor\":\""
+				+ getMediaColor() + "\",\r\n" + "	\"mediaType\":\"" + getMediaType() + "\",\r\n" + "	\"staple\":"
+				+ isStaple() + ",\r\n" + "	\"duplex\":" + isDuplex() + "\r\n" + "}\r\n";
 	}
 
 }
