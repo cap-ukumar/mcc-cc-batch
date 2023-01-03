@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -293,7 +294,7 @@ public class CustomChecklistBatch {
 				obj.setAuId(rs.getInt("AUID"));
 				obj.setSuId(rs.getInt("SUABE"));
 				obj.setEditionId(rs.getString("EDITION"));
-				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE"));
+				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE").toLocalDateTime().format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss")));
 				obj.setCycleSeqNo(rs.getInt("CYCLESEQNO"));
 				obj.setPacketType(rs.getString("PACKETTYPE"));
 				obj.setPrintSetDetailC(rs.getString("print_set_detail_c"));
@@ -368,7 +369,7 @@ public class CustomChecklistBatch {
 	private static ContentChannel getContentChannel(String packetType) {
 		ResultSet rs = null;
 		ContentChannel chetity = null;
-		try (PreparedStatement ps = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_CHECKLIST_CONTENT);) {
+		try (PreparedStatement ps = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_CONTENT_CHANNEL);) {
 			ps.setString(1, packetType);
 			rs = ps.executeQuery();
 
