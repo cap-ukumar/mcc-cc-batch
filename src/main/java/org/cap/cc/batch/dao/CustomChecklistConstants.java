@@ -1,7 +1,9 @@
 package org.cap.cc.batch.dao;
 
-public class CustomChecklistDAO {
+import java.time.format.DateTimeFormatter;
 
+public class CustomChecklistConstants {
+	
 	public static final String GET_CUSTOM_CHECKLIST_FILE_PATH="SELECT Trim(c147.column_data_t) || DECODE (weekday(to_date(trim(c1.column_data_t),'%m/%d/%Y')) , 1, 'Monday', 2, 'Tuesday', 3, 'Wednesday', 4, 'Thursday', 5, 'Friday', 6, 'Saturday', 0, 'Sunday') || '/' as FilePath     FROM ptt_std_code_col c147, ptt_standard_codes s, ptt_std_code_col c1 WHERE      c147.table_u = 147      AND Trim(c147.key_u) = '39' AND Trim(c147.column_type_u)  = 'PATH'     AND s.table_u = 1 AND s.key_u = 'LAPCURRDT'  AND current BETWEEN s.effective_dt and s.termination_dt AND s.table_u = c1.table_u AND s.key_u = c1.key_u AND c1.column_type_u = 'DATE'  AND c1.column_data_t IS NOT NULL AND trim(c1.column_data_t) <> '';";
 	
 	public static final String GET_TASK_ID ="SELECT Min (t.task_u) FROM ptt_task t, lpt_print_set_item m WHERE t.task_u = m.task_u AND t.busn_activity_u = 'CO000200'  AND t.initiated_dt IS NOT NULL  AND t.started_dt IS NULL   AND t.completed_dt IS NULL  AND t.update_user_u <> 'CUSTCHK'  AND (m.print_set_detail_c like 'CHECKLST%'  OR m.print_set_detail_c like 'CHECKLIST%' ) ;";
@@ -30,5 +32,7 @@ public class CustomChecklistDAO {
 	public static final String GET_CHECKLIST_INSPECTOR_CHANNEL="SELECT chk_insr_chnl_f  FROM lpt_chklst_edition  WHERE chklst_edition_u = ? ;";
 	
 	public static final String GET_JOB_COMPLETION_ITERATIONS="SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
+	
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
 
 }

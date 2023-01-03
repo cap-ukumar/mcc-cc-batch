@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.cap.cc.batch.dao.CustomChecklistDAO;
+import org.cap.cc.batch.dao.CustomChecklistConstants;
 import org.cap.cc.batch.model.BasicChecklistEntity;
 import org.cap.cc.batch.model.ContentChannel;
 import org.cap.cc.batch.model.PrinterData;
@@ -83,6 +83,8 @@ public class CustomChecklistBatch {
 			final List<BasicChecklistEntity> checklists = Optional
 					.ofNullable(getBasicChecklistDetails(INFORMIX_CONNECTION, ccTaskId))
 					.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
+
+			// Fetch Checklist Details
 			if (null != checklists)
 				for (BasicChecklistEntity checklist : checklists) {
 					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklist);
@@ -116,14 +118,14 @@ public class CustomChecklistBatch {
 			logger.info("Staple value: {}", staplevalue);
 
 			// Get Media Color
-			String color = Optional.ofNullable(getMediaColor(printSetDetailC))
+			String mediaColor = Optional.ofNullable(getMediaColor(printSetDetailC))
 					.orElseThrow(() -> new Exception("Color not fetched"));
-			logger.info("Media color: {}", color);
+			logger.info("Media color: {}", mediaColor);
 
 			// Get Media Type
-			String media = Optional.ofNullable(getMediaType(printSetDetailC))
+			String mediaType = Optional.ofNullable(getMediaType(printSetDetailC))
 					.orElseThrow(() -> new Exception("Media not fetched"));
-			logger.info("Media Type: {}", media);
+			logger.info("Media Type: {}", mediaType);
 
 			// Get Content & Channel
 			ContentChannel contentChannel = Optional.ofNullable(getContentChannel(packetType))
@@ -153,8 +155,8 @@ public class CustomChecklistBatch {
 			printerData.setDuplex(duplexvalue.equalsIgnoreCase("y"));
 
 			printerData.setStaple(staplevalue.equalsIgnoreCase("y"));
-			printerData.setMediaColor(color);
-			printerData.setMediaType(media);
+			printerData.setMediaColor(mediaColor);
+			printerData.setMediaType(mediaType);
 			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
 					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
 
@@ -182,7 +184,7 @@ public class CustomChecklistBatch {
 		String path = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_CUSTOM_CHECKLIST_FILE_PATH);
+			rs = st.executeQuery(CustomChecklistConstants.GET_CUSTOM_CHECKLIST_FILE_PATH);
 			if (null != rs && rs.next()) {
 				path = rs.getString(1);
 
@@ -198,7 +200,7 @@ public class CustomChecklistBatch {
 		Integer taskId = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_TASK_ID);
+			rs = st.executeQuery(CustomChecklistConstants.GET_TASK_ID);
 			if (null != rs && rs.next()) {
 				taskId = rs.getInt(1);
 			}
@@ -211,7 +213,7 @@ public class CustomChecklistBatch {
 	private static int updateUser_u_column(int programId, int taskId) {
 		Integer result = null;
 		String specialInstrT = CommonUtils.getUUID();
-		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.UPDATE_USER_U);) {
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
 			st.setString(1, specialInstrT);
 			st.setInt(2, programId);
 			st.setInt(3, taskId);
@@ -226,7 +228,7 @@ public class CustomChecklistBatch {
 		String capDomain = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_CAP_DOMAIN);
+			rs = st.executeQuery(CustomChecklistConstants.GET_CAP_DOMAIN);
 			if (null != rs && rs.next()) {
 				capDomain = rs.getString(1);
 			}
@@ -240,7 +242,7 @@ public class CustomChecklistBatch {
 		String url = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_CHECKLIST_WEBSERVICE_URL);
+			rs = st.executeQuery(CustomChecklistConstants.GET_CHECKLIST_WEBSERVICE_URL);
 			if (null != rs && rs.next()) {
 				url = rs.getString(1);
 			}
@@ -254,7 +256,7 @@ public class CustomChecklistBatch {
 		Integer pollingInterval = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_JOB_STATUS_POLLING_INTERVAL);
+			rs = st.executeQuery(CustomChecklistConstants.GET_JOB_STATUS_POLLING_INTERVAL);
 			if (null != rs && rs.next()) {
 				pollingInterval = rs.getInt(1);
 			}
@@ -269,7 +271,7 @@ public class CustomChecklistBatch {
 		Integer iteration = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
-			rs = st.executeQuery(CustomChecklistDAO.GET_JOB_COMPLETION_ITERATIONS);
+			rs = st.executeQuery(CustomChecklistConstants.GET_JOB_COMPLETION_ITERATIONS);
 			if (null != rs && rs.next()) {
 				iteration = rs.getInt(1);
 			}
@@ -282,7 +284,7 @@ public class CustomChecklistBatch {
 	private static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
 		ResultSet rs = null;
 		List<BasicChecklistEntity> list = null;
-		try (PreparedStatement ps = con.prepareStatement(CustomChecklistDAO.GET_BASIC_CHECKLIST_DETAILS);) {
+		try (PreparedStatement ps = con.prepareStatement(CustomChecklistConstants.GET_BASIC_CHECKLIST_DETAILS);) {
 			ps.setInt(1, taskId);
 			rs = ps.executeQuery();
 			if (null != rs)
@@ -294,7 +296,7 @@ public class CustomChecklistBatch {
 				obj.setAuId(rs.getInt("AUID"));
 				obj.setSuId(rs.getInt("SUABE"));
 				obj.setEditionId(rs.getString("EDITION"));
-				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE").toLocalDateTime().format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss")));
+				obj.setActEffectiveDt(rs.getTimestamp("CHKLSTDATE").toLocalDateTime().format(CustomChecklistConstants.DATE_TIME_FORMATTER));
 				obj.setCycleSeqNo(rs.getInt("CYCLESEQNO"));
 				obj.setPacketType(rs.getString("PACKETTYPE"));
 				obj.setPrintSetDetailC(rs.getString("print_set_detail_c"));
@@ -309,7 +311,7 @@ public class CustomChecklistBatch {
 	private static String getDuplexValue(String printSetDetailC) {
 		String dupvalue = null;
 		ResultSet rs = null;
-		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_DUPLEX_VALUE);) {
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_DUPLEX_VALUE);) {
 			st.setString(1, printSetDetailC);
 			rs = st.executeQuery();
 			if (null != rs && rs.next()) {
@@ -324,7 +326,7 @@ public class CustomChecklistBatch {
 	private static String getStapleValue(String printSetDetailC) {
 		String stapvalue = null;
 		ResultSet rs = null;
-		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_STAPLE_VALUE);) {
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_STAPLE_VALUE);) {
 			st.setString(1, printSetDetailC);
 			rs = st.executeQuery();
 			if (null != rs && rs.next()) {
@@ -339,7 +341,7 @@ public class CustomChecklistBatch {
 	private static String getMediaColor(String printSetDetailC) {
 		String medcolour = null;
 		ResultSet rs = null;
-		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_MEDIA_COLOR);) {
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_MEDIA_COLOR);) {
 			st.setString(1, printSetDetailC);
 			rs = st.executeQuery();
 			if (null != rs && rs.next()) {
@@ -354,7 +356,7 @@ public class CustomChecklistBatch {
 	private static String getMediaType(String printSetDetailC) {
 		String mediatype = null;
 		ResultSet rs = null;
-		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_MEDIA_TYPE);) {
+		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_MEDIA_TYPE);) {
 			st.setString(1, printSetDetailC);
 			rs = st.executeQuery();
 			if (null != rs && rs.next()) {
@@ -369,7 +371,7 @@ public class CustomChecklistBatch {
 	private static ContentChannel getContentChannel(String packetType) {
 		ResultSet rs = null;
 		ContentChannel chetity = null;
-		try (PreparedStatement ps = INFORMIX_CONNECTION.prepareStatement(CustomChecklistDAO.GET_CONTENT_CHANNEL);) {
+		try (PreparedStatement ps = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_CONTENT_CHANNEL);) {
 			ps.setString(1, packetType);
 			rs = ps.executeQuery();
 
@@ -389,7 +391,7 @@ public class CustomChecklistBatch {
 		String inspector = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION
-				.prepareStatement(CustomChecklistDAO.GET_CHECKLIST_INSPECTOR_CHANNEL);) {
+				.prepareStatement(CustomChecklistConstants.GET_CHECKLIST_INSPECTOR_CHANNEL);) {
 			st.setString(1, edition);
 			rs = st.executeQuery();
 			if (null != rs && rs.next()) {
