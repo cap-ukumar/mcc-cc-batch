@@ -1,15 +1,7 @@
 package org.cap.cc.batch.model;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.cap.cc.batch.dao.CustomChecklistDAO;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -21,7 +13,7 @@ public class BasicChecklistEntity {
 	private String moduleId;
 	private Integer auId;
 	private Integer suId;
-	private Timestamp actEffectiveDt;
+	private String actEffectiveDt;
 	private String outputOptions;
 	private String channelData;
 	private PrinterData printerData;
@@ -80,11 +72,11 @@ public class BasicChecklistEntity {
 		this.suId = suId;
 	}
 
-	public Timestamp getActEffectiveDt() {
+	public String getActEffectiveDt() {
 		return actEffectiveDt;
 	}
 
-	public void setActEffectiveDt(Timestamp actEffectiveDt) {
+	public void setActEffectiveDt(String actEffectiveDt) {
 		this.actEffectiveDt = actEffectiveDt;
 	}
 
