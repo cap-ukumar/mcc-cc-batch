@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,18 +27,15 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class CustomChecklistBatch {
+public class CustomChecklistBatch implements AutoCloseable {
 	private static RestTemplate restTemplate;
 
-	static Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
+	private static Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
 	private static Connection INFORMIX_CONNECTION;
 
-	public static void processData() {
+	public void processData() {
 		try {
-
-			// Make DB Connection
-			createInformixDbConnection();
 
 			// Get CustomChecklist FilePath
 			final String ccFilePath = Optional.ofNullable(getCustomChecklistFilePath())
@@ -91,13 +87,10 @@ public class CustomChecklistBatch {
 				}
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
-		} finally {
-			// remove DB connections
-			removeConnections();
 		}
 	}
 
-	private static String getCustomChecklistFilePath() {
+	private String getCustomChecklistFilePath() {
 		String path = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -113,7 +106,7 @@ public class CustomChecklistBatch {
 
 	}
 
-	private static Integer getAvailableTaskId() {
+	private Integer getAvailableTaskId() {
 		Integer taskId = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -127,7 +120,7 @@ public class CustomChecklistBatch {
 		return taskId;
 	}
 
-	private static int updateUser_u_column(int taskId) {
+	private int updateUser_u_column(int taskId) {
 		Integer result = null;
 		String specialInstrT = CommonUtils.getUUID();
 		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
@@ -141,7 +134,7 @@ public class CustomChecklistBatch {
 		return result;
 	}
 
-	private static String getCapDomain() {
+	private String getCapDomain() {
 		String capDomain = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -155,7 +148,7 @@ public class CustomChecklistBatch {
 		return capDomain;
 	}
 
-	private static String getCustomChecklistWebServiceUrl() {
+	private String getCustomChecklistWebServiceUrl() {
 		String url = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -169,7 +162,7 @@ public class CustomChecklistBatch {
 		return url;
 	}
 
-	private static Integer getPollingInterval() {
+	private Integer getPollingInterval() {
 		Integer pollingInterval = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -184,7 +177,7 @@ public class CustomChecklistBatch {
 		return pollingInterval;
 	}
 
-	private static Integer getJobIterations() {
+	private Integer getJobIterations() {
 		Integer iteration = null;
 		ResultSet rs = null;
 		try (Statement st = INFORMIX_CONNECTION.createStatement();) {
@@ -198,7 +191,7 @@ public class CustomChecklistBatch {
 		return iteration;
 	}
 
-	private static List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
+	private List<BasicChecklistEntity> getBasicChecklistDetails(Connection con, int taskId) {
 		ResultSet rs = null;
 		List<BasicChecklistEntity> list = null;
 		try (PreparedStatement ps = con.prepareStatement(CustomChecklistConstants.GET_BASIC_CHECKLIST_DETAILS);) {
@@ -226,7 +219,7 @@ public class CustomChecklistBatch {
 		return list;
 	}
 
-	private static String getDuplexValue(String printSetDetailC) {
+	private String getDuplexValue(String printSetDetailC) {
 		String dupvalue = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_DUPLEX_VALUE);) {
@@ -241,7 +234,7 @@ public class CustomChecklistBatch {
 		return dupvalue;
 	}
 
-	private static String getStapleValue(String printSetDetailC) {
+	private String getStapleValue(String printSetDetailC) {
 		String stapvalue = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_STAPLE_VALUE);) {
@@ -256,7 +249,7 @@ public class CustomChecklistBatch {
 		return stapvalue;
 	}
 
-	private static String getMediaColor(String printSetDetailC) {
+	private String getMediaColor(String printSetDetailC) {
 		String medcolour = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_MEDIA_COLOR);) {
@@ -271,7 +264,7 @@ public class CustomChecklistBatch {
 		return medcolour;
 	}
 
-	private static String getMediaType(String printSetDetailC) {
+	private String getMediaType(String printSetDetailC) {
 		String mediatype = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION.prepareStatement(CustomChecklistConstants.GET_MEDIA_TYPE);) {
@@ -286,11 +279,11 @@ public class CustomChecklistBatch {
 		return mediatype;
 	}
 
-	private static ContentChannel getUpdatedContentChannel(String packetType, String editionId) {
+	private ContentChannel getUpdatedContentChannel(String packetType, String editionId) {
 		ContentChannel contentChannel = null;
 		try {
 			contentChannel = getContentChannel(packetType);
-	
+
 			// Get Inspector-Channel-Flag & Update ContentChannel
 			String chkInsp = Optional.ofNullable(getChecklistInspectorFlag(editionId))
 					.orElseThrow(() -> new Exception("Inspector not fetched"));
@@ -308,14 +301,14 @@ public class CustomChecklistBatch {
 		return contentChannel;
 	}
 
-	private static ContentChannel getContentChannel(String packetType) {
+	private ContentChannel getContentChannel(String packetType) {
 		ResultSet rs = null;
 		ContentChannel chetity = null;
 		try (PreparedStatement ps = INFORMIX_CONNECTION
 				.prepareStatement(CustomChecklistConstants.GET_CONTENT_CHANNEL);) {
 			ps.setString(1, packetType);
 			rs = ps.executeQuery();
-	
+
 			if (null != rs && rs.next()) {
 				chetity = new ContentChannel();
 				chetity.setContent(rs.getString(CustomChecklistConstants.LS_CONTENT));
@@ -325,10 +318,10 @@ public class CustomChecklistBatch {
 			logger.debug("Exception in getContentChannel():: {}", e.getMessage());
 		}
 		return chetity;
-	
+
 	}
 
-	private static String getChecklistInspectorFlag(String edition) {
+	private String getChecklistInspectorFlag(String edition) {
 		String inspector = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = INFORMIX_CONNECTION
@@ -344,7 +337,7 @@ public class CustomChecklistBatch {
 		return inspector;
 	}
 
-	private static void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+	private void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			BasicChecklistEntity checklist) {
 		try {
 			// Set UserName for BasicChecklist Class
@@ -405,7 +398,7 @@ public class CustomChecklistBatch {
 		}
 	}
 
-	private static void printJsonRequest(BasicChecklistEntity checklist) {
+	private void printJsonRequest(BasicChecklistEntity checklist) {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			String jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(checklist);
@@ -444,6 +437,17 @@ public class CustomChecklistBatch {
 			e.printStackTrace();
 		}
 
+	}
+
+	public CustomChecklistBatch() {
+		// Make DB Connection
+		createInformixDbConnection();
+	}
+
+	@Override
+	public void close() throws Exception {
+		// Release Database Connections
+		removeConnections();
 	}
 
 }
