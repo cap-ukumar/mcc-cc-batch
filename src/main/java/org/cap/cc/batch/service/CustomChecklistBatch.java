@@ -30,9 +30,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class CustomChecklistBatch implements AutoCloseable {
 	private static RestTemplate restTemplate;
 
-	private static Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
+	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
-	private static Connection INFORMIX_CONNECTION;
+	private Connection INFORMIX_CONNECTION;
 
 	public void processData() {
 		try {
@@ -418,7 +418,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		restTemplate.setMessageConverters(messageConverters);
 	}
 
-	public static void createInformixDbConnection() {
+	public void createInformixDbConnection() {
 		try {
 			INFORMIX_CONNECTION = DriverManager.getConnection(CommonUtils.getProperty(CapConfigConstants.INFORMIX_URL),
 					CommonUtils.getProperty(CapConfigConstants.INFORMIX_USERNAME),
@@ -428,7 +428,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	private static void removeConnections() {
+	private void removeConnections() {
 
 		try {
 			if (INFORMIX_CONNECTION != null)
