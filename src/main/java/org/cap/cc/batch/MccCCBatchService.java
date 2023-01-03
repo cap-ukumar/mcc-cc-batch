@@ -1,22 +1,21 @@
 package org.cap.cc.batch;
 
-import java.io.InputStream;
-
 import org.cap.cc.batch.service.CustomChecklistBatch;
-import org.cap.cc.batch.utils.CommonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MccCCBatchService {
 	
+	private static Logger logger = LoggerFactory.getLogger(MccCCBatchService.class);
+
 	public static void main(String[] args) {
-		
-		try {
-			InputStream stream = MccCCBatchService.class.getResourceAsStream("/Files/CustomChecklist.properties");
-			CommonUtils.loadProperties(stream);
-			CustomChecklistBatch.processData();
-		} catch (Exception e) {
-			e.printStackTrace();
+
+		try (CustomChecklistBatch customChecklistBatch = new CustomChecklistBatch();) {
+			customChecklistBatch.processData();
+		} catch (Exception ex) {
+			logger.error("Exception in main():: {}",ex.getMessage());
 		}
-		
+
 	}
 
 }
