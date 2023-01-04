@@ -38,4 +38,10 @@ public class ChecklistResponse implements Serializable {
 		this.chklstPreviewInfo = chklstPreviewInfo;
 	}
 
+	@Override
+	public String toString() {
+		return "ChecklistResponse [checklistJobInfo=" + checklistJobInfo + ", checklistCsvInfo=" + checklistCsvInfo
+				+ ", chklstPreviewInfo=" + chklstPreviewInfo + "]";
+	}
+
 }

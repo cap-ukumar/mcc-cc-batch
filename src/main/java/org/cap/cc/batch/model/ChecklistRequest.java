@@ -175,6 +175,16 @@ public class ChecklistRequest {
 		this.printSetDetailC = printSetDetailC;
 	}
 
+	@Override
+	public String toString() {
+		return "ChecklistRequest [userName=" + userName + ", password=" + password + ", editionId=" + editionId
+				+ ", moduleId=" + moduleId + ", auId=" + auId + ", suId=" + suId + ", actEffectiveDt=" + actEffectiveDt
+				+ ", outputOptions=" + outputOptions + ", channelData=" + channelData + ", printerData=" + printerData
+				+ ", taskU=" + taskU + ", itemSeqNo=" + itemSeqNo + ", cycleSeqNo=" + cycleSeqNo + ", packetType="
+				+ packetType + ", printSetDetailC=" + printSetDetailC + ", criticalQuestCnt=" + criticalQuestCnt
+				+ ", phase1Cnt=" + phase1Cnt + ", phase2Cnt=" + phase2Cnt + "]";
+	}
+
 	public String toJsonString() {
 		return "\r\n{\r\n" + "\"userName\":\"" + this.getUserName() + "\",\r\n" + "\"password\":\"" + this.password
 				+ "\",\r\n" + "\"editionId\":\"" + getEditionId() + "\",\r\n" + "\"moduleId\":\"" + getModuleId()
