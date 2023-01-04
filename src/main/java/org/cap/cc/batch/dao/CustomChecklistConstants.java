@@ -65,4 +65,6 @@ public class CustomChecklistConstants {
 	
 	public static final String CHECKLIST_INSPECTOR_CHANNEL = "PRNFINAL";
 
+	public static final String STAPLE_VALUE = "N";
+
 }
