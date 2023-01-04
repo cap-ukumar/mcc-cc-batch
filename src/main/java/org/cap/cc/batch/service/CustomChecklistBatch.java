@@ -147,20 +147,32 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("{}", checklistJobInfoRequests);
 
 		/*
-		 * Get Updated BatchJob Status
+		 * Get Thunderhead BatchJob Status
 		 */
+		logger.info("\nStart Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
 		try {
-			getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations, checklistJobInfoRequests);
+			boolean jobStatus = getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations,
+					checklistJobInfoRequests);
+			logger.info("getThunderheadBatchJobStatus():: {}", jobStatus);
+			if (jobStatus) {
+				// Prepare and Insert Records in Audit Table
+				logger.info("Checklists are generated. Inserting records in Audit Table");
+			} else {
+				// Log Error in DB
+				logger.error("One or more jobs was not completed in the allocated time");
+			}
 		} catch (Exception e) {
 			logger.info("Exception{}", e.getMessage());
 		}
+		logger.info("\n\nEnd Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
 
 	}
 
-	private void getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
-			List<ChecklistJobInfoRequest> checklistJobInfoRequests) {
+	private boolean getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval,
+			Integer iterations, List<ChecklistJobInfoRequest> checklistJobInfoRequests) {
 		final int size = checklistJobInfoRequests.size();
 		boolean[] status = new boolean[size];
+		boolean allJobsComplete = true;
 		for (int i = 0; i < size; i++) {
 			status[i] = false;
 		}
@@ -170,20 +182,25 @@ public class CustomChecklistBatch implements AutoCloseable {
 		for (int i = 0; i < size; i++) {
 			int counter = 0;
 			try {
-				do {
-					logger.info("({}) Get Updated Job Info for ({})th time. For JobId: ({})", i + 1, counter,
+				while (counter < iterations) {
+					logger.info("({}) Get Updated Job Info for ({})th time. For JobId: ({})", i + 1, counter + 1,
 							checklistJobInfoRequests.get(i).getBatchJobId());
 					Thread.sleep(pollingInterval);
 					status[i] = getUpdatedJobInfo(ccWebServiceUrl, checklistJobInfoRequests.get(i));
-					if (counter >=15) {	// Dummy True
-						status[i] = true;
+					if (status[i]) { // Dummy True
 						break;
 					}
 					counter++;
-				} while (counter < iterations);
+					// Dummy Exception
+//					throw new RuntimeException("");
+				}
 			} catch (Exception e) {
+				status[i] = false;
 			}
+			allJobsComplete = Boolean.logicalAnd(allJobsComplete, status[i]);
+//			logger.error("allJobsComplete: {}",allJobsComplete);
 		}
+		return allJobsComplete;
 	}
 
 	private Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest) {
@@ -209,9 +226,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			// Parse Json to Pojo
 			ChecklistJobInfo jobInfo = (ChecklistJobInfo) parseJsonStringToPojo(response, ChecklistJobInfo.class);
+			logger.info("\t{}", parsePojoToJsonString(jobInfo));
 
-			// Is Batch Job completed and successful
-			if (null != jobInfo && jobInfo.isBatchJobCompleted() && jobInfo.isBatchJobSuccessful())
+//			 Is Batch Job completed and successful
+			if (null != jobInfo && Boolean.logicalAnd(jobInfo.isBatchJobCompleted(), jobInfo.isBatchJobSuccessful()))
 				flag = true;
 			else
 				flag = false;
@@ -615,8 +633,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 		String jsonString = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-//			jsonString = mapper.writeValueAsString(object);
+//			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+			jsonString = mapper.writeValueAsString(object);
 
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
