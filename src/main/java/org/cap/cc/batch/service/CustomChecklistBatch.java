@@ -85,26 +85,42 @@ public class CustomChecklistBatch implements AutoCloseable {
 			final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
 					.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
 
-			// Submit ChecklistRequest Jobs
-			logger.info("\nStart Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
-			if (null != checklistRequests)
-				for (int i = 0; i < checklistRequests.size(); i++) {
+			// Generate Custom Checklists
+			generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, checklistRequests);
+
+		} catch (Exception ex) {
+			logger.error("{}", ex.getMessage());
+		}
+	}
+
+	private void generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+			final String ccWebServiceUrl, final List<ChecklistRequest> checklistRequests) {
+
+		// Submit ChecklistRequest Jobs
+		logger.info("\nStart Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+		if (null != checklistRequests)
+			for (int i = 0; i < checklistRequests.size(); i++) {
+				try {
 					ChecklistRequest checklist = checklistRequests.get(i);
 
 					// Fill required details for each checklist
 					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklist);
 
-					logger.info("\nNew Checklist Job Request::\n {}", parsePojoToJsonString(checklist));
+					String request = parsePojoToJsonString(checklist);
+					logger.info("\n\t({}) Checklist Job Request::\n \t{}\n", i+1, request);
 
 					// Submit new ChecklistRequest Job
 					ChecklistResponse checklistResponse = submitChecklistJobRequest(ccWebServiceUrl, checklist);
 					checklist.setChecklistResponse(checklistResponse);
-					logger.info("\nChecklist Job Response::\n {}", parsePojoToJsonString(checklistResponse));
+
+					String response = parsePojoToJsonString(checklistResponse);
+					logger.info("\n\t({}) Checklist Job Response::\n \t{}\n", i+1, response);
+				} catch (Exception e) {
+					logger.error("Exception submitting checklistRequest:: {}", e.getMessage());
 				}
-			logger.info("\nEnd Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
-		} catch (Exception ex) {
-			logger.error("{}", ex.getMessage());
-		}
+			}
+		logger.info("\nEnd Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+
 	}
 
 	private void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
