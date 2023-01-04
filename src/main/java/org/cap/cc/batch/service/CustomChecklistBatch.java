@@ -1,6 +1,5 @@
 package org.cap.cc.batch.service;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,10 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -22,6 +21,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
+import org.cap.cc.batch.model.ChecklistJobInfo;
+import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
 import org.cap.cc.batch.model.ChecklistResponse;
 import org.cap.cc.batch.model.ContentChannel;
@@ -77,43 +78,166 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("pollingInterval: {}", pollingInterval);
 
 			// Get Job Status Polling Iterations
-			Integer iteration = Optional.ofNullable(getJobIterations())
+			Integer iterations = Optional.ofNullable(getJobIterations())
 					.orElseThrow(() -> new Exception("Iteration are unknown"));
-			logger.info("Iterations: {}", iteration);
+			logger.info("Iterations: {}", iterations);
 
 			// Get Basic Checklist Details
-			final List<ChecklistRequest> checklists = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
+			final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
 					.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
 
-			// Fetch Checklist Details
-			if (null != checklists)
-				for (int i = 0; i < checklists.size(); i++) {
-					ChecklistRequest checklist = checklists.get(i);
-
-					// Fill required details for each checklist
-					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklist);
-
-					logger.info("Actual Request::\n");
-					// Create Json request
-					parsePojoToJsonString(checklist);
-
-					logger.info("Request made Dummy::\n");
-					// Update actual to Dummy Request
-					checklist = dummyRequest();
-					checklists.set(i, checklist);
-					logger.info("Domain: {}", checklist.getUserName());
-					parsePojoToJsonString(checklist);
-					
-					logger.info("{}",parseJsonStringToPojo(parsePojoToJsonString(checklist), ChecklistRequest.class));
-
-				}
-			// Submit new Checklist Job Request
-			logger.info("Submitting new Checklist Job Request for ");
-			if (null != checklists)
-				submitChecklistJobRequest(ccWebServiceUrl, checklists.get(0));
+			// Generate Custom Checklists
+			generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, pollingInterval, iterations,
+					checklistRequests);
 
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
+		}
+	}
+
+	private void generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
+			final List<ChecklistRequest> checklistRequests) {
+
+		/*
+		 * Submit ChecklistRequest Jobs
+		 */
+		logger.info("\nStart Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+		if (null != checklistRequests)
+			for (int i = 0; i < checklistRequests.size(); i++) {
+				try {
+					ChecklistRequest checklistRequest = checklistRequests.get(i);
+
+					// Fill required details for each checklist
+					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklistRequest);
+
+					// Dummy the request
+					checklistRequest = dummyRequest();
+					checklistRequests.set(i, checklistRequest);
+
+					String request = parsePojoToJsonString(checklistRequest);
+					logger.info("\n\t({}) Checklist Job Request::\n \t{}\n", i + 1, request);
+
+					// Submit new ChecklistRequest Job
+					ChecklistResponse checklistResponse = submitChecklistJobRequest(ccWebServiceUrl, checklistRequest);
+					checklistRequest.setChecklistResponse(checklistResponse);
+
+					String response = parsePojoToJsonString(checklistResponse);
+					logger.info("\n\t({}) Checklist Job Response::\n \t{}\n", i + 1, response);
+				} catch (Exception e) {
+					logger.error("Exception submitting checklistRequest:: {}", e.getMessage());
+				}
+			}
+		logger.info("\nEnd Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+
+		/*
+		 * Prepare ChecklistJobInfoRequests Pojos
+		 */
+		List<ChecklistJobInfoRequest> checklistJobInfoRequests = checklistRequests.stream().map(request -> {
+			ChecklistJobInfo jobInfo = request.getChecklistResponse().getChecklistJobInfo();
+			return new ChecklistJobInfoRequest(request.getUserName(), "", jobInfo.isBatchJobCompleted(),
+					jobInfo.getBatchJobId(), jobInfo.getBatchJobName(), jobInfo.getBatchJobStatus(),
+					jobInfo.isBatchJobSuccessful(), jobInfo.getBatchTransactionsCompleted(),
+					jobInfo.getBatchTransactionsCount(), jobInfo.getBatchTransactionsErrored(),
+					jobInfo.getBatchTransactionsStopped(), jobInfo.getBatchTransactionsSuccessful(),
+					jobInfo.getCriticalQuestCnt(), jobInfo.getFinishTime(), jobInfo.getMessage(),
+					jobInfo.getPhase1Cnt(), jobInfo.getPhase2Cnt(), jobInfo.getStartTime());
+		}).collect(Collectors.toList());
+		if (null != checklistJobInfoRequests && !checklistJobInfoRequests.isEmpty())
+			logger.info("{}", checklistJobInfoRequests);
+
+		/*
+		 * Get Thunderhead BatchJob Status
+		 */
+		logger.info("\nStart Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
+		try {
+			boolean jobStatus = getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations,
+					checklistJobInfoRequests);
+			logger.info("getThunderheadBatchJobStatus():: {}", jobStatus);
+			if (jobStatus) {
+				// Prepare and Insert Records in Audit Table
+				logger.info("Checklists are generated. Inserting records in Audit Table");
+			} else {
+				// Log Error in DB
+				logger.error("One or more jobs was not completed in the allocated time");
+			}
+		} catch (Exception e) {
+			logger.info("Exception{}", e.getMessage());
+		}
+		logger.info("\n\nEnd Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
+
+	}
+
+	private boolean getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval,
+			Integer iterations, List<ChecklistJobInfoRequest> checklistJobInfoRequests) {
+		final int size = checklistJobInfoRequests.size();
+		boolean[] status = new boolean[size];
+		boolean allJobsComplete = true;
+		for (int i = 0; i < size; i++) {
+			status[i] = false;
+		}
+		/*
+		 * getUpdatedJobInfo
+		 */
+		for (int i = 0; i < size; i++) {
+			int counter = 0;
+			try {
+				while (counter < iterations) {
+					logger.info("({}) Get Updated Job Info for ({})th time. For JobId: ({})", i + 1, counter + 1,
+							checklistJobInfoRequests.get(i).getBatchJobId());
+					Thread.sleep(pollingInterval);
+					status[i] = getUpdatedJobInfo(ccWebServiceUrl, checklistJobInfoRequests.get(i));
+					if (status[i]) { // Dummy True
+						break;
+					}
+					counter++;
+					// Dummy Exception
+//					throw new RuntimeException("");
+				}
+			} catch (Exception e) {
+				status[i] = false;
+			}
+			allJobsComplete = Boolean.logicalAnd(allJobsComplete, status[i]);
+//			logger.error("allJobsComplete: {}",allJobsComplete);
+		}
+		return allJobsComplete;
+	}
+
+	private Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest) {
+		try {
+			boolean flag = false;
+			HttpPost request = new HttpPost(ccWebServiceUrl + "job" + "?type=info");
+
+			// Add request headers
+			request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
+			request.addHeader(HttpHeaders.ACCEPT, "*/*");
+			request.addHeader(HttpHeaders.ACCEPT_ENCODING, "EncodingUTF8!");
+			request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "en");
+			request.addHeader(HttpHeaders.CONNECTION, "keep-alive");
+			request.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+			request.addHeader(HttpHeaders.TIMEOUT, "3000");
+
+			// Set json Entity
+			request.setEntity(new StringEntity(parsePojoToJsonString(checklistJobInfoRequest)));
+
+			// Execute HttpPost Request
+			String response = null;
+			response = executeHttpPostRequest(request);
+
+			// Parse Json to Pojo
+			ChecklistJobInfo jobInfo = (ChecklistJobInfo) parseJsonStringToPojo(response, ChecklistJobInfo.class);
+			logger.info("\t{}", parsePojoToJsonString(jobInfo));
+
+//			 Is Batch Job completed and successful
+			if (null != jobInfo && Boolean.logicalAnd(jobInfo.isBatchJobCompleted(), jobInfo.isBatchJobSuccessful()))
+				flag = true;
+			else
+				flag = false;
+			return flag;
+
+		} catch (Exception ex) {
+			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
+			return false;
 		}
 	}
 
@@ -122,55 +246,51 @@ public class CustomChecklistBatch implements AutoCloseable {
 		try {
 			// Set UserName for BasicChecklist Class
 			checklist.setUserName(CAP_DOMAIN);
-	
+
 			String printSetDetailC = checklist.getPrintSetDetailC();
 			String packetType = checklist.getPacketType();
 			String editionId = checklist.getEditionId();
-	
+
 			// Get Duplex Value
 			String duplexvalue = Optional.ofNullable(getDuplexValue(printSetDetailC))
 					.orElseThrow(() -> new Exception("Duplex not fetched"));
-			logger.info("Duplex value: {}", duplexvalue);
-	
+
 			// Get Staple Value
-			String staplevalue = Optional.ofNullable(getStapleValue(printSetDetailC))
-					.orElseThrow(() -> new Exception("Staple not fetched"));
-			logger.info("Staple value: {}", staplevalue);
-	
+//			String staplevalue = Optional.ofNullable(getStapleValue(printSetDetailC))
+//					.orElseThrow(() -> new Exception("Staple not fetched"));
+			String staplevalue = CustomChecklistConstants.STAPLE_VALUE;
+
 			// Get Media Color
 			String mediaColor = Optional.ofNullable(getMediaColor(printSetDetailC))
 					.orElseThrow(() -> new Exception("Color not fetched"));
-			logger.info("Media color: {}", mediaColor);
-	
+
 			// Get Media Type
 			String mediaType = Optional.ofNullable(getMediaType(printSetDetailC))
 					.orElseThrow(() -> new Exception("Media not fetched"));
-			logger.info("Media Type: {}", mediaType);
-	
+
 			// Get Updated Content & Channel
 			ContentChannel contentChannel = Optional.ofNullable(getUpdatedContentChannel(packetType, editionId))
 					.orElseThrow(() -> new Exception("ContentChannel not fetched"));
-			logger.info("{}", contentChannel);
-	
-			// Update Checklist
+
+			// Set Checklist
 			if (null != contentChannel) {
 				checklist.setOutputOptions(contentChannel.getContent());
 				checklist.setChannelData(contentChannel.getChannel());
 			}
-	
+
 			// Create PrinterData
 			PrinterData printerData = new PrinterData();
 			printerData.setDuplex(duplexvalue.equalsIgnoreCase("y"));
-	
+
 			printerData.setStaple(staplevalue.equalsIgnoreCase("y"));
 			printerData.setMediaColor(mediaColor);
 			printerData.setMediaType(mediaType);
 			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
 					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
-	
-			// Set PrinterData for Checklist
+
+			// Set PrinterData
 			checklist.setPrinterData(printerData);
-	
+
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
 		}
@@ -183,15 +303,23 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			HttpPost request = new HttpPost(ccWebServiceUrl + "checklist" + "?type=custom&response=file");
 
-			// add request headers
-			request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+			// Add request headers
+			request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json;charset=UTF-8");
+			request.addHeader(HttpHeaders.ACCEPT, "*/*");
+			request.addHeader(HttpHeaders.ACCEPT_ENCODING, "EncodingUTF8!");
+			request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "en");
+			request.addHeader(HttpHeaders.CONNECTION, "keep-alive");
+			request.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
+			request.addHeader(HttpHeaders.TIMEOUT, "3000");
 
 			// Set json Entity
 			request.setEntity(new StringEntity(parsePojoToJsonString(checklistRequest)));
 
 			// Execute HttpPost Request
-//			String response = executeHttpPostRequest(request);
-			String string = "{\n" + "    \"checklistJobInfo\": {\n" + "        \"batchJobCompleted\": false,\n"
+			String response = null;
+//			response = executeHttpPostRequest(request);
+
+			response = "{\n" + "    \"checklistJobInfo\": {\n" + "        \"batchJobCompleted\": false,\n"
 					+ "        \"batchJobId\": 12962,\n" + "        \"batchJobName\": \"BATCH-12962\",\n"
 					+ "        \"batchJobStatus\": \"D\",\n" + "        \"batchJobSuccessful\": false,\n"
 					+ "        \"batchTransactionsCompleted\": 0,\n" + "        \"batchTransactionsCount\": 0,\n"
@@ -202,10 +330,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 					+ "        \"phase1Cnt\": 6,\n" + "        \"phase2Cnt\": 74,\n"
 					+ "        \"startTime\": \"Jan 3, 2023 1:56:36 AM\"\n" + "    },\n"
 					+ "    \"checklistCsvInfo\": null,\n" + "    \"chklstPreviewInfo\": null\n" + "}";
-			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(string, ChecklistResponse.class);
-			logger.info("{}", checklistResponse);
-			
-			//Dummy interval
+
+			// Parse JsonResponse to Pojo
+			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
+
+			// Dummy interval
 			Thread.sleep(1000);
 
 		} catch (Exception ex) {
@@ -220,16 +349,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 				CloseableHttpResponse response = httpClient.execute(request)) {
 
 			// Get HttpResponse Status
-			logger.info("{}", response.getProtocolVersion()); // HTTP/1.1
-			logger.info("{}", response.getStatusLine().getStatusCode()); // 200
-			logger.info(response.getStatusLine().getReasonPhrase()); // OK
-			logger.info("{}", response.getStatusLine()); // HTTP/1.1 200 OK
+			int statusCode = response.getStatusLine().getStatusCode();
+//			logger.info("{}", statusCode); // 200
 
 			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				// return it as a String
+			if (statusCode == 200 && null != entity) {
 				result = EntityUtils.toString(entity);
-				logger.info(result);
 			}
 		} catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
@@ -450,19 +575,18 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private ContentChannel getUpdatedContentChannel(String packetType, String editionId) {
 		ContentChannel contentChannel = null;
 		try {
-			contentChannel = getContentChannel(packetType);
+			contentChannel = Optional.ofNullable(getContentChannel(packetType))
+					.orElseThrow(() -> new Exception("ContentChannel not fetched"));
 
 			// Get Inspector-Channel-Flag & Update ContentChannel
 			String chkInsp = Optional.ofNullable(getChecklistInspectorFlag(editionId))
 					.orElseThrow(() -> new Exception("Inspector not fetched"));
-			if (null != chkInsp && null != contentChannel) {
-				logger.info("Checklist inspector: {}", chkInsp);
-				if (chkInsp.equalsIgnoreCase(CustomChecklistConstants.CHECKLIST_INSPECTOR_FLAG)) {
-					contentChannel.setContent(CustomChecklistConstants.CHECKLIST_INSPECTOR_CONTENT);
-					contentChannel.setChannel(CustomChecklistConstants.CHECKLIST_INSPECTOR_CHANNEL);
-					logger.info("Updated channel: {}", contentChannel);
-				}
+
+			if (chkInsp.equalsIgnoreCase(CustomChecklistConstants.CHECKLIST_INSPECTOR_FLAG)) {
+				contentChannel.setContent(CustomChecklistConstants.CHECKLIST_INSPECTOR_CONTENT);
+				contentChannel.setChannel(CustomChecklistConstants.CHECKLIST_INSPECTOR_CHANNEL);
 			}
+
 		} catch (Exception e) {
 			logger.error("Exception in getUpdatedContentChannel():: {}", e.getMessage());
 		}
@@ -509,8 +633,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		String jsonString = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-			logger.info("{}", jsonString);
+//			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
 			jsonString = mapper.writeValueAsString(object);
 
 		} catch (JsonProcessingException e) {
@@ -524,7 +647,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			object = mapper.readValue(string, class1);
-			logger.info("{}", object);
 		} catch (Exception ex) {
 			logger.info("Exception in parseJsonStringToPojo():: {}", ex.getMessage());
 		}

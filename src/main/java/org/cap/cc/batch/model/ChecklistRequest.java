@@ -7,6 +7,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ChecklistRequest {
 
+	// ChecklistResponse
+	@JsonIgnore
+	ChecklistResponse checklistResponse;
+
 	private String userName;
 	private final String password = "";
 
@@ -58,6 +62,38 @@ public class ChecklistRequest {
 	// total_ph2
 	@JsonIgnore
 	private int phase2Cnt;
+
+	public ChecklistResponse getChecklistResponse() {
+		return checklistResponse;
+	}
+
+	public void setChecklistResponse(ChecklistResponse checklistResponse) {
+		this.checklistResponse = checklistResponse;
+	}
+
+	public int getCriticalQuestCnt() {
+		return criticalQuestCnt;
+	}
+
+	public void setCriticalQuestCnt(int criticalQuestCnt) {
+		this.criticalQuestCnt = criticalQuestCnt;
+	}
+
+	public int getPhase1Cnt() {
+		return phase1Cnt;
+	}
+
+	public void setPhase1Cnt(int phase1Cnt) {
+		this.phase1Cnt = phase1Cnt;
+	}
+
+	public int getPhase2Cnt() {
+		return phase2Cnt;
+	}
+
+	public void setPhase2Cnt(int phase2Cnt) {
+		this.phase2Cnt = phase2Cnt;
+	}
 
 	public String getUserName() {
 		return this.userName;
