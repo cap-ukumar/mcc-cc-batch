@@ -145,4 +145,19 @@ public class ChecklistJobInfo {
 	public void setStartTime(String startTime) {
 		this.startTime = startTime;
 	}
+
+	@Override
+	public String toString() {
+		return "ChecklistJobInfo [batchJobCompleted=" + batchJobCompleted + ", batchJobId=" + batchJobId
+				+ ", batchJobName=" + batchJobName + ", batchJobStatus=" + batchJobStatus + ", batchJobSuccessful="
+				+ batchJobSuccessful + ", batchTransactionsCompleted=" + batchTransactionsCompleted
+				+ ", batchTransactionsCount=" + batchTransactionsCount + ", batchTransactionsErrored="
+				+ batchTransactionsErrored + ", batchTransactionsStopped=" + batchTransactionsStopped
+				+ ", batchTransactionsSuccessful=" + batchTransactionsSuccessful + ", criticalQuestCnt="
+				+ criticalQuestCnt + ", finishTime=" + finishTime + ", message=" + message + ", phase1Cnt=" + phase1Cnt
+				+ ", phase2Cnt=" + phase2Cnt + ", startTime=" + startTime + "]";
+	}
+	
+	
 }
+
