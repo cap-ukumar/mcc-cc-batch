@@ -21,6 +21,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
+import org.cap.cc.batch.model.AuditChecklistEntity;
 import org.cap.cc.batch.model.ChecklistJobInfo;
 import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
@@ -341,6 +342,41 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
 		}
 		return checklistResponse;
+	}
+	
+	private Integer insertaudit(AuditChecklistEntity etity) {
+		Integer audit = null;
+		try (PreparedStatement st = getInformixConnection()
+				.prepareStatement(CustomChecklistConstants.INSERT_AUDIT_CHECKLIST);) {
+			
+			st.setInt(1, etity.getAbe_au_u());
+			st.setString(2,etity.getPrint_us_reg_qst_f());
+			st.setInt(3, etity.getAbe_su_u());
+			st.setString(4,etity.getModule_key_c());
+            st.setString(5, etity.getChklst_edition_u());
+            st.setString(6, etity.getLap_packet_type_c());
+            st.setString(7,etity.getChklst_type_c());
+            st.setTimestamp(8, etity.getSupl_from_dt());
+            st.setInt(9,etity.getSupl_from_audit_u());
+            st.setTimestamp(10, etity.getChklst_eff_dt());
+            st.setInt(11,etity.getTot_qst_cust_ph1_q());
+            st.setInt(12,etity.getTot_qst_cust_ph2_q());
+            st.setInt(13,etity.getTot_qst_cust_cri_q());
+            st.setInt(14,etity.getTot_qst_supl_ph1_q());
+            st.setInt(15,etity.getTot_qst_supl_ph2_q());
+            st.setInt(16,etity.getTot_qst_supl_cri_q());
+            st.setTimestamp(17, etity.getChklst_creation_dt());
+            st.setTimestamp(18, etity.getLast_update_dt());         
+			st.setString(19,etity.getUpdate_user_u());
+			st.setInt(20,etity.getInvoking_pgm_c());
+			st.setInt(21,etity.getUpdate_pgm_c());
+			
+			audit = st.executeUpdate();
+			
+		} catch (Exception e) {
+			logger.debug("Exception in insert audit table(): {}", e.getMessage());
+		}
+		return audit;
 	}
 
 	private String executeHttpPostRequest(HttpPost request) {
