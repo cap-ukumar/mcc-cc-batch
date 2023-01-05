@@ -40,6 +40,7 @@ import org.springframework.http.converter.json.MappingJacksonHttpMessageConverte
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CustomChecklistBatch implements AutoCloseable {
@@ -112,8 +113,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 					// Log Error in DB
 					logger.error("One or more jobs was not completed in the allocated time");
 				}
-			}else {
-				logger.error("Unable to update ptt_task:: {}",updateRow);
+			} else {
+				logger.error("Unable to update ptt_task:: {}", updateRow);
 			}
 
 		} catch (Exception ex) {
@@ -777,6 +778,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 		Object object = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
+			/*
+			 * Unrecognized Property Exception
+			 */
+			mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 			object = mapper.readValue(string, class1);
 		} catch (Exception ex) {
 			logger.info("Exception in parseJsonStringToPojo():: {}", ex.getMessage());
