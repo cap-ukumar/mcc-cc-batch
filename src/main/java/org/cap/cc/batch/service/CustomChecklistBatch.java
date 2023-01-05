@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,6 +64,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			// Update User_u of ptt_task
 			// ...
+//			updateUser_u_column(ccTaskId);
 
 			// Get CAP Domain
 			final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
@@ -87,18 +90,85 @@ public class CustomChecklistBatch implements AutoCloseable {
 			final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
 					.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
 
-			// Generate Custom Checklists
-			generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, pollingInterval, iterations,
-					checklistRequests);
+			/*
+			 * Generate Custom Checklists & Get Thunderhead Batchjob Status
+			 */
+			boolean jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl,
+					pollingInterval, iterations, checklistRequests);
+
+			logger.info("Thunderhead BatchJob Status:: {}", jobStatus);
+			if (jobStatus) {
+				// Prepare and Insert Records in Audit Table
+				logger.info("Checklists are generated. Inserting records in Audit Table");
+
+				/*
+				 * Save Audit Records
+				 */
+				saveAuditRecords(checklistRequests);
+			} else {
+				// Log Error in DB
+				logger.error("One or more jobs was not completed in the allocated time");
+			}
 
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
 		}
 	}
 
-	private void generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+	private void saveAuditRecords(List<ChecklistRequest> checklistRequests) {
+		for (int i = 0; i < checklistRequests.size(); i++) {
+			try {
+				String abe_au_u = Optional.ofNullable(checklistRequests.get(i).getAuId()).orElseThrow(()->new Exception("Auid can't be null"));
+				String print_us_reg_qst_f = CustomChecklistConstants.US_REG_FLAG;
+				String abe_su_u = Optional.ofNullable(checklistRequests.get(i).getSuId()).orElseThrow(()->new Exception("Suid can't be null"));
+				String module_key_c = checklistRequests.get(i).getModuleId();
+				String chklst_edition_u = checklistRequests.get(i).getEditionId();
+				String lap_packet_type_c = checklistRequests.get(i).getPacketType();
+				String chklst_type_c = CustomChecklistConstants.CHKLST_TYPE_U;
+				Timestamp supl_from_dt = null;
+				Integer supl_from_audit_u = null;
+				Timestamp chklst_eff_dt = Timestamp.valueOf(LocalDateTime.parse(
+						checklistRequests.get(i).getActEffectiveDt(), CustomChecklistConstants.DATE_TIME_FORMATTER));
+				Integer seq_no_u = checklistRequests.get(i).getCycleSeqNo();
+				Integer tot_qst_cust_ph1_q = checklistRequests.get(i).getChecklistResponse().getChecklistJobInfo()
+						.getPhase1Cnt();
+				Integer tot_qst_cust_ph2_q = checklistRequests.get(i).getChecklistResponse().getChecklistJobInfo()
+						.getPhase2Cnt();
+				Integer tot_qst_cust_cri_q = checklistRequests.get(i).getChecklistResponse().getChecklistJobInfo()
+						.getCriticalQuestCnt();
+				Integer tot_qst_supl_ph1_q = null;
+				Integer tot_qst_supl_ph2_q = null;
+				Integer tot_qst_supl_cri_q = null;
+				// Current Timestamp
+				Timestamp currentTimeStamp = Timestamp.valueOf(
+						LocalDateTime.parse(LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER),
+								CustomChecklistConstants.DATE_TIME_FORMATTER));
+				Timestamp chklst_creation_dt = currentTimeStamp;
+				Timestamp last_update_dt = currentTimeStamp;
+				String update_user_u = CustomChecklistConstants.UPDATE_USER_U;
+				Integer invoking_pgm_c = CustomChecklistConstants.PROGRAM_ID;
+				Integer update_pgm_c = CustomChecklistConstants.PROGRAM_ID;
+
+				/*
+				 * Create New Audit Pojo to be inserted
+				 */
+
+				AuditChecklistEntity auditEntity = new AuditChecklistEntity();
+				auditEntity.setAbe_au_u(Integer.parseInt(abe_au_u));
+				auditEntity.setAbe_su_u(Integer.parseInt(abe_su_u));
+//			insertaudit(null)
+//		
+			} catch (Exception ex) {
+				logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequests.get(i));
+				logger.error("Reason: {}", ex.getMessage());
+			}
+		}
+	}
+
+	private boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
 			final List<ChecklistRequest> checklistRequests) {
+		boolean jobStatus = false;
 
 		/*
 		 * Submit ChecklistRequest Jobs
@@ -152,20 +222,13 @@ public class CustomChecklistBatch implements AutoCloseable {
 		 */
 		logger.info("\nStart Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
 		try {
-			boolean jobStatus = getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations,
+			jobStatus = getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations,
 					checklistJobInfoRequests);
-			logger.info("getThunderheadBatchJobStatus():: {}", jobStatus);
-			if (jobStatus) {
-				// Prepare and Insert Records in Audit Table
-				logger.info("Checklists are generated. Inserting records in Audit Table");
-			} else {
-				// Log Error in DB
-				logger.error("One or more jobs was not completed in the allocated time");
-			}
 		} catch (Exception e) {
 			logger.info("Exception{}", e.getMessage());
 		}
 		logger.info("\n\nEnd Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
+		return jobStatus;
 
 	}
 
@@ -343,36 +406,36 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 		return checklistResponse;
 	}
-	
+
 	private Integer insertaudit(AuditChecklistEntity etity) {
 		Integer audit = null;
 		try (PreparedStatement st = getInformixConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_AUDIT_CHECKLIST);) {
-			
+
 			st.setInt(1, etity.getAbe_au_u());
-			st.setString(2,etity.getPrint_us_reg_qst_f());
+			st.setString(2, etity.getPrint_us_reg_qst_f());
 			st.setInt(3, etity.getAbe_su_u());
-			st.setString(4,etity.getModule_key_c());
-            st.setString(5, etity.getChklst_edition_u());
-            st.setString(6, etity.getLap_packet_type_c());
-            st.setString(7,etity.getChklst_type_c());
-            st.setTimestamp(8, etity.getSupl_from_dt());
-            st.setInt(9,etity.getSupl_from_audit_u());
-            st.setTimestamp(10, etity.getChklst_eff_dt());
-            st.setInt(11,etity.getTot_qst_cust_ph1_q());
-            st.setInt(12,etity.getTot_qst_cust_ph2_q());
-            st.setInt(13,etity.getTot_qst_cust_cri_q());
-            st.setInt(14,etity.getTot_qst_supl_ph1_q());
-            st.setInt(15,etity.getTot_qst_supl_ph2_q());
-            st.setInt(16,etity.getTot_qst_supl_cri_q());
-            st.setTimestamp(17, etity.getChklst_creation_dt());
-            st.setTimestamp(18, etity.getLast_update_dt());         
-			st.setString(19,etity.getUpdate_user_u());
-			st.setInt(20,etity.getInvoking_pgm_c());
-			st.setInt(21,etity.getUpdate_pgm_c());
-			
+			st.setString(4, etity.getModule_key_c());
+			st.setString(5, etity.getChklst_edition_u());
+			st.setString(6, etity.getLap_packet_type_c());
+			st.setString(7, etity.getChklst_type_c());
+			st.setTimestamp(8, etity.getSupl_from_dt());
+			st.setInt(9, etity.getSupl_from_audit_u());
+			st.setTimestamp(10, etity.getChklst_eff_dt());
+			st.setInt(11, etity.getTot_qst_cust_ph1_q());
+			st.setInt(12, etity.getTot_qst_cust_ph2_q());
+			st.setInt(13, etity.getTot_qst_cust_cri_q());
+			st.setInt(14, etity.getTot_qst_supl_ph1_q());
+			st.setInt(15, etity.getTot_qst_supl_ph2_q());
+			st.setInt(16, etity.getTot_qst_supl_cri_q());
+			st.setTimestamp(17, etity.getChklst_creation_dt());
+			st.setTimestamp(18, etity.getLast_update_dt());
+			st.setString(19, etity.getUpdate_user_u());
+			st.setInt(20, etity.getInvoking_pgm_c());
+			st.setInt(21, etity.getUpdate_pgm_c());
+
 			audit = st.executeUpdate();
-			
+
 		} catch (Exception e) {
 			logger.debug("Exception in insert audit table(): {}", e.getMessage());
 		}
