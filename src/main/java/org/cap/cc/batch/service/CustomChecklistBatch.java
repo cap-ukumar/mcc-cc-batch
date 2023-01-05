@@ -62,52 +62,58 @@ public class CustomChecklistBatch implements AutoCloseable {
 					.orElseThrow(() -> new Exception("TaskId isn't fetched"));
 			logger.info("taskId: {}", ccTaskId);
 
-			// Update User_u of ptt_task
-			// ...
-//			updateUser_u_column(ccTaskId);
-
-			// Get CAP Domain
-			final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
-					.orElseThrow(() -> new Exception("CAP Domain isn't fetched"));
-			logger.info("CAP-Domain: {}", CAP_DOMAIN);
-
-			// Get Checklist Webservice Url
-			final String ccWebServiceUrl = Optional.ofNullable(getCustomChecklistWebServiceUrl())
-					.orElseThrow(() -> new Exception("WebService Url isn't fetched"));
-			logger.info("WebService-Url: {}", ccWebServiceUrl);
-
-			// Get Job Status Polling Interval
-			Integer pollingInterval = Optional.ofNullable(getPollingInterval())
-					.orElseThrow(() -> new Exception("Polling Interval isn't fetched"));
-			logger.info("pollingInterval: {}", pollingInterval);
-
-			// Get Job Status Polling Iterations
-			Integer iterations = Optional.ofNullable(getJobIterations())
-					.orElseThrow(() -> new Exception("Iteration are unknown"));
-			logger.info("Iterations: {}", iterations);
-
-			// Get Basic Checklist Details
-			final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
-					.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
-
 			/*
-			 * Generate Custom Checklists & Get Thunderhead Batchjob Status
+			 * Update User_u of ptt_task
 			 */
-			boolean jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl,
-					pollingInterval, iterations, checklistRequests);
+			int updateRow = updateUser_u_column(ccTaskId);
+			logger.info("Updating ptt_task Table for TaskId: {} and Status: {}", ccTaskId, updateRow);
 
-			logger.info("Thunderhead BatchJob Status:: {}", jobStatus);
-			if (jobStatus) {
-				// Prepare and Insert Records in Audit Table
-				logger.info("Checklists are generated. Inserting records in Audit Table");
+			if (updateRow > 0) {
+				// Get CAP Domain
+				final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
+						.orElseThrow(() -> new Exception("CAP Domain isn't fetched"));
+				logger.info("CAP-Domain: {}", CAP_DOMAIN);
+
+				// Get Checklist Webservice Url
+				final String ccWebServiceUrl = Optional.ofNullable(getCustomChecklistWebServiceUrl())
+						.orElseThrow(() -> new Exception("WebService Url isn't fetched"));
+				logger.info("WebService-Url: {}", ccWebServiceUrl);
+
+				// Get Job Status Polling Interval
+				Integer pollingInterval = Optional.ofNullable(getPollingInterval())
+						.orElseThrow(() -> new Exception("Polling Interval isn't fetched"));
+				logger.info("pollingInterval: {}", pollingInterval);
+
+				// Get Job Status Polling Iterations
+				Integer iterations = Optional.ofNullable(getJobIterations())
+						.orElseThrow(() -> new Exception("Iteration are unknown"));
+				logger.info("Iterations: {}", iterations);
+
+				// Get Basic Checklist Details
+				final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
+						.orElseThrow(() -> new Exception("Checklists are empty for given Taskid: " + ccTaskId));
 
 				/*
-				 * Save Audit Records
+				 * Generate Custom Checklists & Get Thunderhead Batchjob Status
 				 */
-				saveAuditRecords(checklistRequests);
-			} else {
-				// Log Error in DB
-				logger.error("One or more jobs was not completed in the allocated time");
+				boolean jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl,
+						pollingInterval, iterations, checklistRequests);
+
+				logger.info("Thunderhead BatchJob Status:: {}", jobStatus);
+				if (jobStatus) {
+					// Prepare and Insert Records in Audit Table
+					logger.info("Checklists are generated. Inserting records in Audit Table");
+
+					/*
+					 * Save Audit Records
+					 */
+					saveAuditRecords(checklistRequests);
+				} else {
+					// Log Error in DB
+					logger.error("One or more jobs was not completed in the allocated time");
+				}
+			}else {
+				logger.error("Unable to update ptt_task:: {}",updateRow);
 			}
 
 		} catch (Exception ex) {
@@ -118,9 +124,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private void saveAuditRecords(List<ChecklistRequest> checklistRequests) {
 		for (int i = 0; i < checklistRequests.size(); i++) {
 			try {
-				String abe_au_u = Optional.ofNullable(checklistRequests.get(i).getAuId()).orElseThrow(()->new Exception("Auid can't be null"));
+				String abe_au_u = Optional.ofNullable(checklistRequests.get(i).getAuId())
+						.orElseThrow(() -> new Exception("Auid can't be null"));
 				String print_us_reg_qst_f = CustomChecklistConstants.US_REG_FLAG;
-				String abe_su_u = Optional.ofNullable(checklistRequests.get(i).getSuId()).orElseThrow(()->new Exception("Suid can't be null"));
+				String abe_su_u = Optional.ofNullable(checklistRequests.get(i).getSuId())
+						.orElseThrow(() -> new Exception("Suid can't be null"));
 				String module_key_c = checklistRequests.get(i).getModuleId();
 				String chklst_edition_u = checklistRequests.get(i).getEditionId();
 				String lap_packet_type_c = checklistRequests.get(i).getPacketType();
@@ -145,7 +153,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 								CustomChecklistConstants.DATE_TIME_FORMATTER));
 				Timestamp chklst_creation_dt = currentTimeStamp;
 				Timestamp last_update_dt = currentTimeStamp;
-				String update_user_u = CustomChecklistConstants.UPDATE_USER_U;
+				String update_user_u = CustomChecklistConstants.UPDATE_USER_U_VALUE;
 				Integer invoking_pgm_c = CustomChecklistConstants.PROGRAM_ID;
 				Integer update_pgm_c = CustomChecklistConstants.PROGRAM_ID;
 
@@ -156,8 +164,33 @@ public class CustomChecklistBatch implements AutoCloseable {
 				AuditChecklistEntity auditEntity = new AuditChecklistEntity();
 				auditEntity.setAbe_au_u(Integer.parseInt(abe_au_u));
 				auditEntity.setAbe_su_u(Integer.parseInt(abe_su_u));
-//			insertaudit(null)
-//		
+				auditEntity.setPrint_us_reg_qst_f(print_us_reg_qst_f);
+				auditEntity.setModule_key_c(module_key_c);
+				auditEntity.setChklst_edition_u(chklst_edition_u);
+				auditEntity.setLap_packet_type_c(lap_packet_type_c);
+				auditEntity.setChklst_type_c(chklst_type_c);
+				auditEntity.setSupl_from_dt(supl_from_dt);
+				auditEntity.setSupl_from_audit_u(supl_from_audit_u);
+				auditEntity.setChklst_eff_dt(chklst_eff_dt);
+				auditEntity.setSeq_no_u(seq_no_u);
+				auditEntity.setTot_qst_cust_ph1_q(tot_qst_cust_ph1_q);
+				auditEntity.setTot_qst_cust_ph2_q(tot_qst_cust_ph2_q);
+				auditEntity.setTot_qst_cust_cri_q(tot_qst_cust_cri_q);
+				auditEntity.setTot_qst_supl_cri_q(tot_qst_supl_cri_q);
+				auditEntity.setTot_qst_supl_ph1_q(tot_qst_supl_ph1_q);
+				auditEntity.setTot_qst_supl_ph2_q(tot_qst_supl_ph2_q);
+				auditEntity.setChklst_creation_dt(chklst_creation_dt);
+				auditEntity.setLast_update_dt(last_update_dt);
+				auditEntity.setUpdate_user_u(update_user_u);
+				auditEntity.setInvoking_pgm_c(invoking_pgm_c);
+				auditEntity.setUpdate_pgm_c(update_pgm_c);
+
+				logger.info("\nInserting Audit Record\n({})\t{}\n", i, parsePojoToJsonString(auditEntity));
+				/*
+				 * Inserting Audit Record
+				 */
+				insertAuditRecord(auditEntity);
+
 			} catch (Exception ex) {
 				logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequests.get(i));
 				logger.error("Reason: {}", ex.getMessage());
@@ -182,15 +215,19 @@ public class CustomChecklistBatch implements AutoCloseable {
 					// Fill required details for each checklist
 					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklistRequest);
 
-					// Dummy the request
-					checklistRequest = dummyRequest();
-					checklistRequests.set(i, checklistRequest);
+					/*
+					 * Dummy the request
+					 */
+//					checklistRequest = dummyRequest();
+//					checklistRequests.set(i, checklistRequest);
 
 					String request = parsePojoToJsonString(checklistRequest);
 					logger.info("\n\t({}) Checklist Job Request::\n \t{}\n", i + 1, request);
 
 					// Submit new ChecklistRequest Job
 					ChecklistResponse checklistResponse = submitChecklistJobRequest(ccWebServiceUrl, checklistRequest);
+
+					// Set checklistResponse
 					checklistRequest.setChecklistResponse(checklistResponse);
 
 					String response = parsePojoToJsonString(checklistResponse);
@@ -249,20 +286,22 @@ public class CustomChecklistBatch implements AutoCloseable {
 				while (counter < iterations) {
 					logger.info("({}) Get Updated Job Info for ({})th time. For JobId: ({})", i + 1, counter + 1,
 							checklistJobInfoRequests.get(i).getBatchJobId());
-					Thread.sleep(pollingInterval);
+					logger.info("Waiting before getting Job Status: {}", pollingInterval * 1000);
+					Thread.sleep(pollingInterval * 1000);
 					status[i] = getUpdatedJobInfo(ccWebServiceUrl, checklistJobInfoRequests.get(i));
 					if (status[i]) { // Dummy True
 						break;
 					}
 					counter++;
-					// Dummy Exception
+					/*
+					 * Dummy Exception
+					 */
 //					throw new RuntimeException("");
 				}
 			} catch (Exception e) {
 				status[i] = false;
 			}
 			allJobsComplete = Boolean.logicalAnd(allJobsComplete, status[i]);
-//			logger.error("allJobsComplete: {}",allJobsComplete);
 		}
 		return allJobsComplete;
 	}
@@ -381,25 +420,15 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			// Execute HttpPost Request
 			String response = null;
-//			response = executeHttpPostRequest(request);
-
-			response = "{\n" + "    \"checklistJobInfo\": {\n" + "        \"batchJobCompleted\": false,\n"
-					+ "        \"batchJobId\": 12962,\n" + "        \"batchJobName\": \"BATCH-12962\",\n"
-					+ "        \"batchJobStatus\": \"D\",\n" + "        \"batchJobSuccessful\": false,\n"
-					+ "        \"batchTransactionsCompleted\": 0,\n" + "        \"batchTransactionsCount\": 0,\n"
-					+ "        \"batchTransactionsErrored\": 0,\n" + "        \"batchTransactionsStopped\": 0,\n"
-					+ "        \"batchTransactionsSuccessful\": 0,\n" + "        \"criticalQuestCnt\": 3,\n"
-					+ "        \"finishTime\": null,\n"
-					+ "        \"message\": \"submitBatch: Thunderhead batchJobId: 12962, completion status:D\",\n"
-					+ "        \"phase1Cnt\": 6,\n" + "        \"phase2Cnt\": 74,\n"
-					+ "        \"startTime\": \"Jan 3, 2023 1:56:36 AM\"\n" + "    },\n"
-					+ "    \"checklistCsvInfo\": null,\n" + "    \"chklstPreviewInfo\": null\n" + "}";
+			response = executeHttpPostRequest(request);
 
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
 
-			// Dummy interval
-			Thread.sleep(1000);
+			/*
+			 * Dummy interval
+			 */
+//			Thread.sleep(1000);
 
 		} catch (Exception ex) {
 			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
@@ -407,7 +436,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return checklistResponse;
 	}
 
-	private Integer insertaudit(AuditChecklistEntity etity) {
+	private Integer insertAuditRecord(AuditChecklistEntity etity) {
 		Integer audit = null;
 		try (PreparedStatement st = getInformixConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_AUDIT_CHECKLIST);) {
@@ -420,21 +449,24 @@ public class CustomChecklistBatch implements AutoCloseable {
 			st.setString(6, etity.getLap_packet_type_c());
 			st.setString(7, etity.getChklst_type_c());
 			st.setTimestamp(8, etity.getSupl_from_dt());
-			st.setInt(9, etity.getSupl_from_audit_u());
+			st.setInt(9, null != etity.getSupl_from_audit_u() ? etity.getSupl_from_audit_u() : 0);
 			st.setTimestamp(10, etity.getChklst_eff_dt());
-			st.setInt(11, etity.getTot_qst_cust_ph1_q());
-			st.setInt(12, etity.getTot_qst_cust_ph2_q());
-			st.setInt(13, etity.getTot_qst_cust_cri_q());
-			st.setInt(14, etity.getTot_qst_supl_ph1_q());
-			st.setInt(15, etity.getTot_qst_supl_ph2_q());
-			st.setInt(16, etity.getTot_qst_supl_cri_q());
-			st.setTimestamp(17, etity.getChklst_creation_dt());
-			st.setTimestamp(18, etity.getLast_update_dt());
-			st.setString(19, etity.getUpdate_user_u());
-			st.setInt(20, etity.getInvoking_pgm_c());
-			st.setInt(21, etity.getUpdate_pgm_c());
+			// Seqno
+			st.setInt(11, null != etity.getSeq_no_u() ? etity.getSeq_no_u() : 0);
+			st.setInt(12, null != etity.getTot_qst_cust_ph1_q() ? etity.getTot_qst_cust_ph1_q() : 0);
+			st.setInt(13, null != etity.getTot_qst_cust_ph2_q() ? etity.getTot_qst_cust_ph2_q() : 0);
+			st.setInt(14, null != etity.getTot_qst_cust_cri_q() ? etity.getTot_qst_cust_cri_q() : 0);
+			st.setInt(15, null != etity.getTot_qst_supl_ph1_q() ? etity.getTot_qst_supl_ph1_q() : 0);
+			st.setInt(16, null != etity.getTot_qst_supl_ph2_q() ? etity.getTot_qst_supl_ph2_q() : 0);
+			st.setInt(17, null != etity.getTot_qst_supl_cri_q() ? etity.getTot_qst_supl_cri_q() : 0);
+			st.setTimestamp(18, etity.getChklst_creation_dt());
+			st.setTimestamp(19, etity.getLast_update_dt());
+			st.setString(20, etity.getUpdate_user_u());
+			st.setInt(21, null != etity.getInvoking_pgm_c() ? etity.getInvoking_pgm_c() : 0);
+			st.setInt(22, null != etity.getUpdate_pgm_c() ? etity.getUpdate_pgm_c() : 0);
 
 			audit = st.executeUpdate();
+//			logger.info("\nst: \n{}\n", parsePojoToJsonString(st));
 
 		} catch (Exception e) {
 			logger.debug("Exception in insert audit table(): {}", e.getMessage());
@@ -508,7 +540,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 	}
 
 	private int updateUser_u_column(int taskId) {
-		Integer result = null;
+		int result = -1;
 		String specialInstrT = CommonUtils.getUUID();
 		try (PreparedStatement st = getInformixConnection().prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
 			st.setString(1, specialInstrT);
@@ -732,8 +764,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 		String jsonString = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-//			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-			jsonString = mapper.writeValueAsString(object);
+			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+//			jsonString = mapper.writeValueAsString(object);
 
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();

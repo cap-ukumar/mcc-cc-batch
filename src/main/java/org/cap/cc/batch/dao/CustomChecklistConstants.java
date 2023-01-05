@@ -8,8 +8,9 @@ public class CustomChecklistConstants {
 
 	public static final String GET_TASK_ID = "SELECT Min (t.task_u) FROM ptt_task t, lpt_print_set_item m WHERE t.task_u = m.task_u AND t.busn_activity_u = 'CO000200'  AND t.initiated_dt IS NOT NULL  AND t.started_dt IS NULL   AND t.completed_dt IS NULL  AND t.update_user_u <> 'CUSTCHK'  AND (m.print_set_detail_c like 'CHECKLST%'  OR m.print_set_detail_c like 'CHECKLIST%' ) ;";
 
-	public static final String UPDATE_USER_U = "UPDATE ptt_task SET special_instr_t = ?, ptt_task.update_user_u = 'CUSTCHK', last_update_dt = current,\n"
-			+ " update_pgm_c = ? WHERE ptt_task.busn_activity_u = 'CO000200' AND ptt_task.task_u = ? AND ptt_task.update_user_u <> : 'CUSTCHK' ;";
+	public static final String UPDATE_USER_U = "UPDATE ptt_task SET special_instr_t = ?, update_user_u = 'CUSTCHK', last_update_dt = current,  update_pgm_c = ? WHERE busn_activity_u = 'CO000200' AND task_u = ? AND update_user_u <>  'CUSTCHK' ;";
+
+	public static final String UPDATE_USER_U_VALUE = "CUSTCHK";
 
 	public static final String GET_DUPLEX_VALUE = "SELECT ptt_std_code_col.column_data_t FROM ptt_standard_codes, ptt_std_code_col WHERE ptt_standard_codes.table_u = 201 AND ptt_standard_codes.key_u = ? AND ptt_std_code_col.column_type_u  = 'DUPLEXFLAG' AND ptt_standard_codes.table_u  = ptt_std_code_col.table_u AND ptt_standard_codes.key_u  = ptt_std_code_col.key_u AND ptt_standard_codes.effective_dt = ptt_std_code_col.effective_dt AND current between ptt_standard_codes.effective_dt AND ptt_standard_codes.termination_dt ;";
 
@@ -34,7 +35,7 @@ public class CustomChecklistConstants {
 	public static final String GET_JOB_COMPLETION_ITERATIONS = "SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
 
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
-	
+
 	public static final DateTimeFormatter DB_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 	public static final int PROGRAM_ID = 3001;
@@ -69,17 +70,7 @@ public class CustomChecklistConstants {
 
 	public static final String STAPLE_VALUE = "N";
 
-	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO informix.lpt_chklst_audit\r\n" + "(\r\n" + "  \r\n"
-			+ "  abe_au_u,\r\n" + "  print_us_reg_qst_f,\r\n" + "  abe_su_u,\r\n" + "  module_key_c,\r\n"
-			+ "  chklst_edition_u,\r\n" + "  lap_packet_type_c,\r\n" + "  chklst_type_c,\r\n" + "  supl_from_dt,\r\n"
-			+ "  supl_from_audit_u,\r\n" + "  chklst_eff_dt,\r\n" + "  seq_no_u,\r\n" + "  tot_qst_cust_ph1_q,\r\n"
-			+ "  tot_qst_cust_ph2_q,\r\n" + "  tot_qst_cust_cri_q,\r\n" + "  tot_qst_supl_ph1_q,\r\n"
-			+ "  tot_qst_supl_ph2_q,\r\n" + "  tot_qst_supl_cri_q,\r\n" + "  chklst_creation_dt,\r\n"
-			+ "  last_update_dt,\r\n" + "  update_user_u,\r\n" + "  invoking_pgm_c,\r\n" + "  update_pgm_c\r\n"
-			+ ")\r\n" + "VALUES\r\n" + "(\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n"
-			+ "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n"
-			+ "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n" + "  ?,\r\n"
-			+ "  ?\r\n" + ")";
+	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, supl_from_dt, supl_from_audit_u, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, tot_qst_cust_cri_q, tot_qst_supl_ph1_q, tot_qst_supl_ph2_q, tot_qst_supl_cri_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
 
 	public static final String US_REG_FLAG = "Y";
 
