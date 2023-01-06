@@ -43,6 +43,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
 	private Connection informixConnection;
+	
+	private Connection postgresConnection;
 
 	public void processData() {
 		try {
@@ -56,8 +58,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			final Integer ccTaskId = Optional.ofNullable(getAvailableTaskId())
 					.orElseThrow(() -> new Exception("TaskId isn't fetched"));
 			logger.info("taskId: {}", ccTaskId);
-			
-			//Interrupt
+
+			// Interrupt
 			System.exit(0);
 			/*
 			 * Update User_u of ptt_task
@@ -68,7 +70,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			if (updateRow > 0) {
 				// Get CAP Domain
 				final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
-						.orElseThrow(() -> new Exception("CAP Domain isn't fetched"));
+						.orElseThrow(() -> new Exception("CAP Domain isn't fetched")) + "\\pullere";
 				logger.info("CAP-Domain: {}", CAP_DOMAIN);
 
 				// Get Checklist Webservice Url
@@ -118,7 +120,17 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	private void saveAuditRecords(List<ChecklistRequest> checklistRequests) {
+	public void saveAuditRecords(List<ChecklistRequest> checklistRequests) {
+
+		/*
+		 * Select Logic
+		 */
+		List<AuditChecklistEntity> auditList = getAuditRecordsOfPacket(1182146, 1182147);
+		logger.info("List of Audit Records fetched from db: {}", auditList);
+
+		/*
+		 * Insert Logic
+		 */
 		for (int i = 0; i < checklistRequests.size(); i++) {
 			try {
 				String abe_au_u = Optional.ofNullable(checklistRequests.get(i).getAuId())
@@ -186,7 +198,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				/*
 				 * Inserting Audit Record
 				 */
-				insertAuditRecord(auditEntity);
+//				insertAuditRecord(auditEntity);
 
 			} catch (Exception ex) {
 				logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequests.get(i));
@@ -195,7 +207,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	private boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+	public boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
 			final List<ChecklistRequest> checklistRequests) {
 		boolean jobStatus = false;
@@ -266,7 +278,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	private boolean getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval,
+	public boolean getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval,
 			Integer iterations, List<ChecklistJobInfoRequest> checklistJobInfoRequests) {
 		final int size = checklistJobInfoRequests.size();
 		boolean[] status = new boolean[size];
@@ -286,7 +298,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 					logger.info("Waiting before getting Job Status: {}", pollingInterval * 1000);
 					Thread.sleep(pollingInterval * 1000);
 					status[i] = getUpdatedJobInfo(ccWebServiceUrl, checklistJobInfoRequests.get(i));
-					if (status[i]) { // Dummy True
+					if (status[i]) {
 						break;
 					}
 					counter++;
@@ -297,13 +309,14 @@ public class CustomChecklistBatch implements AutoCloseable {
 				}
 			} catch (Exception e) {
 				status[i] = false;
+				// log exception in db
 			}
 			allJobsComplete = Boolean.logicalAnd(allJobsComplete, status[i]);
 		}
 		return allJobsComplete;
 	}
 
-	private Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest) {
+	public Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest) {
 		try {
 			boolean flag = false;
 			HttpPost request = new HttpPost(ccWebServiceUrl + "job" + "?type=info");
@@ -341,7 +354,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	private void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
+	public void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			ChecklistRequest checklist) {
 		try {
 			// Set UserName for BasicChecklist Class
@@ -375,7 +388,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Set Checklist
 			if (null != contentChannel) {
 				checklist.setOutputOptions(contentChannel.getContent());
-				checklist.setChannelData(contentChannel.getChannel());
+//				checklist.setChannelData(contentChannel.getChannel());
+				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA);
 			}
 
 			// Create PrinterData
@@ -396,7 +410,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	private ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) {
+	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) {
 		ChecklistResponse checklistResponse = null;
 		try {
 			parsePojoToJsonString(checklistRequest);
@@ -416,8 +430,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			request.setEntity(new StringEntity(parsePojoToJsonString(checklistRequest)));
 
 			// Execute HttpPost Request
-			String response = null;
-			response = executeHttpPostRequest(request);
+			String response = executeHttpPostRequest(request);
+			logger.info("\nJson Response: \n{}\n", response);
 
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
@@ -433,7 +447,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return checklistResponse;
 	}
 
-	private Integer insertAuditRecord(AuditChecklistEntity etity) {
+	public Integer insertAuditRecord(AuditChecklistEntity etity) {
 		Integer audit = null;
 		try (PreparedStatement st = getInformixConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_AUDIT_CHECKLIST);) {
@@ -471,7 +485,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return audit;
 	}
 
-	private String executeHttpPostRequest(HttpPost request) {
+	public String executeHttpPostRequest(HttpPost request) {
 		String result = null;
 		try (CloseableHttpClient httpClient = HttpClients.createDefault();
 				CloseableHttpResponse response = httpClient.execute(request)) {
@@ -481,16 +495,16 @@ public class CustomChecklistBatch implements AutoCloseable {
 //			logger.info("{}", statusCode); // 200
 
 			HttpEntity entity = response.getEntity();
-			if (statusCode == 200 && null != entity) {
-				result = EntityUtils.toString(entity);
-			}
+//			if (statusCode == 200 && null != entity) {
+			result = EntityUtils.toString(entity);
+//			}
 		} catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
 		return result;
 	}
 
-	private ChecklistRequest dummyRequest() {
+	public ChecklistRequest dummyRequest() {
 		ChecklistRequest dummy = new ChecklistRequest();
 		dummy.setUserName("webrw");
 		dummy.setEditionId("06042020");
@@ -506,7 +520,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	private String getCustomChecklistFilePath() {
+	public String getCustomChecklistFilePath() {
 		String path = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -522,7 +536,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	private Integer getAvailableTaskId() {
+	public Integer getAvailableTaskId() {
 		Integer taskId = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -536,7 +550,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return taskId;
 	}
 
-	private int updateUser_u_column(int taskId) {
+	public int updateUser_u_column(int taskId) {
 		int result = -1;
 		String specialInstrT = CommonUtils.getUUID();
 		try (PreparedStatement st = getInformixConnection().prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
@@ -550,7 +564,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return result;
 	}
 
-	private String getCapDomain() {
+	public String getCapDomain() {
 		String capDomain = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -564,7 +578,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return capDomain;
 	}
 
-	private String getCustomChecklistWebServiceUrl() {
+	public String getCustomChecklistWebServiceUrl() {
 		String url = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -578,7 +592,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return url;
 	}
 
-	private Integer getPollingInterval() {
+	public Integer getPollingInterval() {
 		Integer pollingInterval = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -593,7 +607,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return pollingInterval;
 	}
 
-	private Integer getJobIterations() {
+	public Integer getJobIterations() {
 		Integer iteration = null;
 		ResultSet rs = null;
 		try (Statement st = getInformixConnection().createStatement();) {
@@ -607,7 +621,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return iteration;
 	}
 
-	private List<ChecklistRequest> getBasicChecklistDetails(int taskId) {
+	public List<ChecklistRequest> getBasicChecklistDetails(int taskId) {
 		ResultSet rs = null;
 		List<ChecklistRequest> list = null;
 		try (PreparedStatement ps = getInformixConnection()
@@ -636,7 +650,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return list;
 	}
 
-	private String getDuplexValue(String printSetDetailC) {
+	public String getDuplexValue(String printSetDetailC) {
 		String dupvalue = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = getInformixConnection()
@@ -652,7 +666,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return dupvalue;
 	}
 
-	private String getStapleValue(String printSetDetailC) {
+	public String getStapleValue(String printSetDetailC) {
 		String stapvalue = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = getInformixConnection()
@@ -668,7 +682,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return stapvalue;
 	}
 
-	private String getMediaColor(String printSetDetailC) {
+	public String getMediaColor(String printSetDetailC) {
 		String medcolour = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = getInformixConnection()
@@ -684,7 +698,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return medcolour;
 	}
 
-	private String getMediaType(String printSetDetailC) {
+	public String getMediaType(String printSetDetailC) {
 		String mediatype = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = getInformixConnection()
@@ -700,7 +714,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return mediatype;
 	}
 
-	private ContentChannel getUpdatedContentChannel(String packetType, String editionId) {
+	public ContentChannel getUpdatedContentChannel(String packetType, String editionId) {
 		ContentChannel contentChannel = null;
 		try {
 			contentChannel = Optional.ofNullable(getContentChannel(packetType))
@@ -721,7 +735,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return contentChannel;
 	}
 
-	private ContentChannel getContentChannel(String packetType) {
+	public ContentChannel getContentChannel(String packetType) {
 		ResultSet rs = null;
 		ContentChannel chetity = null;
 		try (PreparedStatement ps = getInformixConnection()
@@ -741,7 +755,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	private String getChecklistInspectorFlag(String edition) {
+	public String getChecklistInspectorFlag(String edition) {
 		String inspector = null;
 		ResultSet rs = null;
 		try (PreparedStatement st = getInformixConnection()
@@ -757,7 +771,49 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return inspector;
 	}
 
-	private String parsePojoToJsonString(Object object) {
+	public List<AuditChecklistEntity> getAuditRecordsOfPacket(int auId, int suId) {
+		List<AuditChecklistEntity> auditList = new ArrayList<>();
+		ResultSet rs = null;
+		try (PreparedStatement st = getInformixConnection()
+				.prepareStatement(CustomChecklistConstants.GET_AUDIT_RECORDS_OF_PACKET);) {
+			st.setInt(1, auId);
+			st.setInt(2, suId);
+			rs = st.executeQuery();
+			while (null != rs && rs.next()) {
+				AuditChecklistEntity auditRecord = new AuditChecklistEntity();
+				auditRecord.setChklst_audit_u(rs.getInt("chklst_audit_u"));
+				auditRecord.setAbe_au_u(rs.getInt("abe_au_u"));
+				auditRecord.setAbe_su_u(rs.getInt("abe_su_u"));
+				auditRecord.setPrint_us_reg_qst_f(rs.getString("print_us_reg_qst_f"));
+				auditRecord.setModule_key_c(rs.getString("module_key_c"));
+				auditRecord.setChklst_edition_u(rs.getString("chklst_edition_u"));
+				auditRecord.setLap_packet_type_c(rs.getString("lap_packet_type_c"));
+				auditRecord.setChklst_type_c(rs.getString("chklst_type_c"));
+				auditRecord.setSupl_from_dt(rs.getTimestamp("supl_from_dt"));
+				auditRecord.setSupl_from_audit_u(rs.getInt("supl_from_audit_u"));
+				auditRecord.setChklst_eff_dt(rs.getTimestamp("chklst_eff_dt"));
+				auditRecord.setSeq_no_u(rs.getInt("seq_no_u"));
+				auditRecord.setTot_qst_cust_ph1_q(rs.getInt("tot_qst_cust_ph1_q"));
+				auditRecord.setTot_qst_cust_ph2_q(rs.getInt("tot_qst_cust_ph2_q"));
+				auditRecord.setTot_qst_cust_cri_q(rs.getInt("tot_qst_cust_cri_q"));
+				auditRecord.setTot_qst_supl_cri_q(rs.getInt("tot_qst_supl_cri_q"));
+				auditRecord.setTot_qst_supl_ph1_q(rs.getInt("tot_qst_supl_ph1_q"));
+				auditRecord.setTot_qst_supl_ph2_q(rs.getInt("tot_qst_supl_ph2_q"));
+				auditRecord.setChklst_creation_dt(rs.getTimestamp("chklst_creation_dt"));
+				auditRecord.setLast_update_dt(rs.getTimestamp("last_update_dt"));
+				auditRecord.setUpdate_user_u(rs.getString("update_user_u"));
+				auditRecord.setInvoking_pgm_c(rs.getInt("invoking_pgm_c"));
+				auditRecord.setUpdate_pgm_c(rs.getInt("update_pgm_c"));
+
+				auditList.add(auditRecord);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getchecklistinspectorchannel():: {}", e.getMessage());
+		}
+		return auditList;
+	}
+
+	public String parsePojoToJsonString(Object object) {
 		String jsonString = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
@@ -770,7 +826,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return jsonString;
 	}
 
-	private Object parseJsonStringToPojo(String string, Class<?> class1) {
+	public Object parseJsonStringToPojo(String string, Class<?> class1) {
 		Object object = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
@@ -799,12 +855,29 @@ public class CustomChecklistBatch implements AutoCloseable {
 	public Connection getInformixConnection() {
 		return this.informixConnection;
 	}
+	
+	public void createPostgresDbConnection() {
+		try {
+			this.postgresConnection = DriverManager.getConnection(
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_URL),
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_USERNAME),
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_PASSWORD));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-	private void removeConnections() {
+	public Connection getPostgresConnection() {
+		return this.postgresConnection;
+	}
+
+	public void removeConnections() {
 
 		try {
 			if (null != getInformixConnection())
 				this.informixConnection.close();
+			if (null != getPostgresConnection())
+				this.postgresConnection.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -812,8 +885,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 	}
 
 	public CustomChecklistBatch() {
-		// Make DB Connection
+		// Create Database Connections
 		createInformixDbConnection();
+		createPostgresDbConnection();
 
 	}
 
