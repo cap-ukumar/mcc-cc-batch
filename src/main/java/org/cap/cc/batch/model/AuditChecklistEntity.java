@@ -167,6 +167,20 @@ public class AuditChecklistEntity {
 	public void setUpdate_pgm_c(Integer update_pgm_c) {
 		this.update_pgm_c = update_pgm_c;
 	}
+	@Override
+	public String toString() {
+		return "AuditChecklistEntity [chklst_audit_u=" + chklst_audit_u + ", abe_au_u=" + abe_au_u
+				+ ", print_us_reg_qst_f=" + print_us_reg_qst_f + ", abe_su_u=" + abe_su_u + ", module_key_c="
+				+ module_key_c + ", chklst_edition_u=" + chklst_edition_u + ", lap_packet_type_c=" + lap_packet_type_c
+				+ ", chklst_type_c=" + chklst_type_c + ", supl_from_dt=" + supl_from_dt + ", supl_from_audit_u="
+				+ supl_from_audit_u + ", chklst_eff_dt=" + chklst_eff_dt + ", seq_no_u=" + seq_no_u
+				+ ", tot_qst_cust_ph1_q=" + tot_qst_cust_ph1_q + ", tot_qst_cust_ph2_q=" + tot_qst_cust_ph2_q
+				+ ", tot_qst_cust_cri_q=" + tot_qst_cust_cri_q + ", tot_qst_supl_ph1_q=" + tot_qst_supl_ph1_q
+				+ ", tot_qst_supl_ph2_q=" + tot_qst_supl_ph2_q + ", tot_qst_supl_cri_q=" + tot_qst_supl_cri_q
+				+ ", chklst_creation_dt=" + chklst_creation_dt + ", last_update_dt=" + last_update_dt
+				+ ", update_user_u=" + update_user_u + ", invoking_pgm_c=" + invoking_pgm_c + ", update_pgm_c="
+				+ update_pgm_c + "]";
+	}
 	
 	
 }

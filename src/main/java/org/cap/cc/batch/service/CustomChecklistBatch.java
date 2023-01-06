@@ -124,8 +124,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		 * Select Logic
 		 */
 		List<AuditChecklistEntity> auditList = getAuditRecordsOfPacket(1182146, 1182147);
-		logger.info("List of Audit Records fetched from db: {}",auditList);
-		
+		logger.info("List of Audit Records fetched from db: {}", auditList);
 
 		/*
 		 * Insert Logic
@@ -781,9 +780,28 @@ public class CustomChecklistBatch implements AutoCloseable {
 				AuditChecklistEntity auditRecord = new AuditChecklistEntity();
 				auditRecord.setChklst_audit_u(rs.getInt("chklst_audit_u"));
 				auditRecord.setAbe_au_u(rs.getInt("abe_au_u"));
-				auditRecord.setPrint_us_reg_qst_f(rs.getString(3));
-//				audit
-//				...
+				auditRecord.setAbe_su_u(rs.getInt("abe_su_u"));
+				auditRecord.setPrint_us_reg_qst_f(rs.getString("print_us_reg_qst_f"));
+				auditRecord.setModule_key_c(rs.getString("module_key_c"));
+				auditRecord.setChklst_edition_u(rs.getString("chklst_edition_u"));
+				auditRecord.setLap_packet_type_c(rs.getString("lap_packet_type_c"));
+				auditRecord.setChklst_type_c(rs.getString("chklst_type_c"));
+				auditRecord.setSupl_from_dt(rs.getTimestamp("supl_from_dt"));
+				auditRecord.setSupl_from_audit_u(rs.getInt("supl_from_audit_u"));
+				auditRecord.setChklst_eff_dt(rs.getTimestamp("chklst_eff_dt"));
+				auditRecord.setSeq_no_u(rs.getInt("seq_no_u"));
+				auditRecord.setTot_qst_cust_ph1_q(rs.getInt("tot_qst_cust_ph1_q"));
+				auditRecord.setTot_qst_cust_ph2_q(rs.getInt("tot_qst_cust_ph2_q"));
+				auditRecord.setTot_qst_cust_cri_q(rs.getInt("tot_qst_cust_cri_q"));
+				auditRecord.setTot_qst_supl_cri_q(rs.getInt("tot_qst_supl_cri_q"));
+				auditRecord.setTot_qst_supl_ph1_q(rs.getInt("tot_qst_supl_ph1_q"));
+				auditRecord.setTot_qst_supl_ph2_q(rs.getInt("tot_qst_supl_ph2_q"));
+				auditRecord.setChklst_creation_dt(rs.getTimestamp("chklst_creation_dt"));
+				auditRecord.setLast_update_dt(rs.getTimestamp("last_update_dt"));
+				auditRecord.setUpdate_user_u(rs.getString("update_user_u"));
+				auditRecord.setInvoking_pgm_c(rs.getInt("invoking_pgm_c"));
+				auditRecord.setUpdate_pgm_c(rs.getInt("update_pgm_c"));
+
 				auditList.add(auditRecord);
 			}
 		} catch (Exception e) {
