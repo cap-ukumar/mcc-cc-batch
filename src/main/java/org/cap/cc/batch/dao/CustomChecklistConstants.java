@@ -33,6 +33,10 @@ public class CustomChecklistConstants {
 	public static final String GET_CHECKLIST_INSPECTOR_CHANNEL = "SELECT chk_insr_chnl_f  FROM lpt_chklst_edition  WHERE chklst_edition_u = ? ;";
 
 	public static final String GET_JOB_COMPLETION_ITERATIONS = "SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
+	
+	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, supl_from_dt, supl_from_audit_u, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, tot_qst_cust_cri_q, tot_qst_supl_ph1_q, tot_qst_supl_ph2_q, tot_qst_supl_cri_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
+	
+	public static final String GET_AUDIT_RECORDS_OF_PACKET = "SELECT   chklst_audit_u,   abe_au_u,   print_us_reg_qst_f,   abe_su_u,   module_key_c,   chklst_edition_u,   lap_packet_type_c,   chklst_type_c,   supl_from_dt,   supl_from_audit_u,   chklst_eff_dt,   seq_no_u,   tot_qst_cust_ph1_q,   tot_qst_cust_ph2_q,   tot_qst_supl_ph1_q,   tot_qst_supl_ph2_q,   tot_qst_cust_cri_q,   tot_qst_supl_cri_q,    chklst_creation_dt,   last_update_dt,   update_user_u,   invoking_pgm_c,   update_pgm_c FROM  lpt_chklst_audit  WHERE (   abe_au_u = ? ) AND  (   abe_su_u = ? ) ;";
 
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss");
 
@@ -69,8 +73,6 @@ public class CustomChecklistConstants {
 	public static final String CHECKLIST_INSPECTOR_CHANNEL = "PRNFINAL";
 
 	public static final String STAPLE_VALUE = "N";
-
-	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, supl_from_dt, supl_from_audit_u, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, tot_qst_cust_cri_q, tot_qst_supl_ph1_q, tot_qst_supl_ph2_q, tot_qst_supl_cri_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
 
 	public static final String US_REG_FLAG = "Y";
 

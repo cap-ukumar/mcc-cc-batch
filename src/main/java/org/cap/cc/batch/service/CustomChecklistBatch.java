@@ -56,8 +56,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			final Integer ccTaskId = Optional.ofNullable(getAvailableTaskId())
 					.orElseThrow(() -> new Exception("TaskId isn't fetched"));
 			logger.info("taskId: {}", ccTaskId);
-			
-			//Interrupt
+
+			// Interrupt
 			System.exit(0);
 			/*
 			 * Update User_u of ptt_task
@@ -68,7 +68,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			if (updateRow > 0) {
 				// Get CAP Domain
 				final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
-						.orElseThrow(() -> new Exception("CAP Domain isn't fetched"));
+						.orElseThrow(() -> new Exception("CAP Domain isn't fetched")) + "\\pullere";
 				logger.info("CAP-Domain: {}", CAP_DOMAIN);
 
 				// Get Checklist Webservice Url
@@ -119,6 +119,17 @@ public class CustomChecklistBatch implements AutoCloseable {
 	}
 
 	private void saveAuditRecords(List<ChecklistRequest> checklistRequests) {
+
+		/*
+		 * Select Logic
+		 */
+		List<AuditChecklistEntity> auditList = getAuditRecordsOfPacket(1182146, 1182147);
+		logger.info("List of Audit Records fetched from db: {}",auditList);
+		
+
+		/*
+		 * Insert Logic
+		 */
 		for (int i = 0; i < checklistRequests.size(); i++) {
 			try {
 				String abe_au_u = Optional.ofNullable(checklistRequests.get(i).getAuId())
@@ -186,7 +197,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				/*
 				 * Inserting Audit Record
 				 */
-				insertAuditRecord(auditEntity);
+//				insertAuditRecord(auditEntity);
 
 			} catch (Exception ex) {
 				logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequests.get(i));
@@ -286,7 +297,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 					logger.info("Waiting before getting Job Status: {}", pollingInterval * 1000);
 					Thread.sleep(pollingInterval * 1000);
 					status[i] = getUpdatedJobInfo(ccWebServiceUrl, checklistJobInfoRequests.get(i));
-					if (status[i]) { // Dummy True
+					if (status[i]) {
 						break;
 					}
 					counter++;
@@ -297,6 +308,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				}
 			} catch (Exception e) {
 				status[i] = false;
+				// log exception in db
 			}
 			allJobsComplete = Boolean.logicalAnd(allJobsComplete, status[i]);
 		}
@@ -416,8 +428,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			request.setEntity(new StringEntity(parsePojoToJsonString(checklistRequest)));
 
 			// Execute HttpPost Request
-			String response = null;
-			response = executeHttpPostRequest(request);
+			String response = executeHttpPostRequest(request);
+			logger.info("\nJson Response: \n{}\n", response);
 
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
@@ -481,9 +493,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 //			logger.info("{}", statusCode); // 200
 
 			HttpEntity entity = response.getEntity();
-			if (statusCode == 200 && null != entity) {
-				result = EntityUtils.toString(entity);
-			}
+//			if (statusCode == 200 && null != entity) {
+			result = EntityUtils.toString(entity);
+//			}
 		} catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
@@ -755,6 +767,29 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.debug("Exception in getchecklistinspectorchannel():: {}", e.getMessage());
 		}
 		return inspector;
+	}
+
+	public List<AuditChecklistEntity> getAuditRecordsOfPacket(int auId, int suId) {
+		List<AuditChecklistEntity> auditList = new ArrayList<>();
+		ResultSet rs = null;
+		try (PreparedStatement st = getInformixConnection()
+				.prepareStatement(CustomChecklistConstants.GET_AUDIT_RECORDS_OF_PACKET);) {
+			st.setInt(1, auId);
+			st.setInt(2, suId);
+			rs = st.executeQuery();
+			while (null != rs && rs.next()) {
+				AuditChecklistEntity auditRecord = new AuditChecklistEntity();
+				auditRecord.setChklst_audit_u(rs.getInt("chklst_audit_u"));
+				auditRecord.setAbe_au_u(rs.getInt("abe_au_u"));
+				auditRecord.setPrint_us_reg_qst_f(rs.getString(3));
+//				audit
+//				...
+				auditList.add(auditRecord);
+			}
+		} catch (Exception e) {
+			logger.debug("Exception in getchecklistinspectorchannel():: {}", e.getMessage());
+		}
+		return auditList;
 	}
 
 	private String parsePojoToJsonString(Object object) {
