@@ -51,48 +51,12 @@ public class ChecklistRequest {
 	@JsonIgnore
 	private String printSetDetailC;
 
-	// total_crit
-	@JsonIgnore
-	private int criticalQuestCnt;
-
-	// total_ph1
-	@JsonIgnore
-	private int phase1Cnt;
-
-	// total_ph2
-	@JsonIgnore
-	private int phase2Cnt;
-
 	public ChecklistResponse getChecklistResponse() {
 		return checklistResponse;
 	}
 
 	public void setChecklistResponse(ChecklistResponse checklistResponse) {
 		this.checklistResponse = checklistResponse;
-	}
-
-	public int getCriticalQuestCnt() {
-		return criticalQuestCnt;
-	}
-
-	public void setCriticalQuestCnt(int criticalQuestCnt) {
-		this.criticalQuestCnt = criticalQuestCnt;
-	}
-
-	public int getPhase1Cnt() {
-		return phase1Cnt;
-	}
-
-	public void setPhase1Cnt(int phase1Cnt) {
-		this.phase1Cnt = phase1Cnt;
-	}
-
-	public int getPhase2Cnt() {
-		return phase2Cnt;
-	}
-
-	public void setPhase2Cnt(int phase2Cnt) {
-		this.phase2Cnt = phase2Cnt;
 	}
 
 	public String getUserName() {
@@ -213,12 +177,12 @@ public class ChecklistRequest {
 
 	@Override
 	public String toString() {
-		return "ChecklistRequest [userName=" + userName + ", password=" + password + ", editionId=" + editionId
-				+ ", moduleId=" + moduleId + ", auId=" + auId + ", suId=" + suId + ", actEffectiveDt=" + actEffectiveDt
-				+ ", outputOptions=" + outputOptions + ", channelData=" + channelData + ", printerData=" + printerData
-				+ ", taskU=" + taskU + ", itemSeqNo=" + itemSeqNo + ", cycleSeqNo=" + cycleSeqNo + ", packetType="
-				+ packetType + ", printSetDetailC=" + printSetDetailC + ", criticalQuestCnt=" + criticalQuestCnt
-				+ ", phase1Cnt=" + phase1Cnt + ", phase2Cnt=" + phase2Cnt + "]";
+		return "ChecklistRequest [checklistResponse=" + checklistResponse + ", userName=" + userName + ", password="
+				+ password + ", editionId=" + editionId + ", moduleId=" + moduleId + ", auId=" + auId + ", suId=" + suId
+				+ ", actEffectiveDt=" + actEffectiveDt + ", outputOptions=" + outputOptions + ", channelData="
+				+ channelData + ", printerData=" + printerData + ", taskU=" + taskU + ", itemSeqNo=" + itemSeqNo
+				+ ", cycleSeqNo=" + cycleSeqNo + ", packetType=" + packetType + ", printSetDetailC=" + printSetDetailC
+				+ "]";
 	}
 
 	public String toJsonString() {
