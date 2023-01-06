@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,17 +33,12 @@ import org.cap.cc.batch.utils.CapConfigConstants;
 import org.cap.cc.batch.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJacksonHttpMessageConverter;
-import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CustomChecklistBatch implements AutoCloseable {
-	private static RestTemplate restTemplate;
 
 	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
@@ -62,7 +56,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			final Integer ccTaskId = Optional.ofNullable(getAvailableTaskId())
 					.orElseThrow(() -> new Exception("TaskId isn't fetched"));
 			logger.info("taskId: {}", ccTaskId);
-
+			
+			//Interrupt
+			System.exit(0);
 			/*
 			 * Update User_u of ptt_task
 			 */
@@ -787,16 +783,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("Exception in parseJsonStringToPojo():: {}", ex.getMessage());
 		}
 		return object;
-	}
-
-	public static void getRestTemplate() {
-		restTemplate = new RestTemplate();
-		List<HttpMessageConverter<?>> messageConverters = new ArrayList<HttpMessageConverter<?>>();
-		MappingJacksonHttpMessageConverter converter = new MappingJacksonHttpMessageConverter();
-
-		converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
-		messageConverters.add(converter);
-		restTemplate.setMessageConverters(messageConverters);
 	}
 
 	public void createInformixDbConnection() {
