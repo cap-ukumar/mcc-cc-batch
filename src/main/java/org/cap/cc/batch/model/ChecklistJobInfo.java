@@ -11,11 +11,11 @@ public class ChecklistJobInfo {
 	private int batchTransactionsErrored;
 	private int batchTransactionsStopped;
 	private int batchTransactionsSuccessful;
-	private int criticalQuestCnt;
+	private Integer criticalQuestCnt;
 	private String finishTime;
 	private String message;
-	private int phase1Cnt;
-	private int phase2Cnt;
+	private Integer phase1Cnt;
+	private Integer phase2Cnt;
 	private String startTime;
 
 	public boolean isBatchJobCompleted() {
@@ -98,11 +98,11 @@ public class ChecklistJobInfo {
 		this.batchTransactionsSuccessful = batchTransactionsSuccessful;
 	}
 
-	public int getCriticalQuestCnt() {
+	public Integer getCriticalQuestCnt() {
 		return criticalQuestCnt;
 	}
 
-	public void setCriticalQuestCnt(int criticalQuestCnt) {
+	public void setCriticalQuestCnt(Integer criticalQuestCnt) {
 		this.criticalQuestCnt = criticalQuestCnt;
 	}
 
@@ -122,28 +122,28 @@ public class ChecklistJobInfo {
 		this.message = message;
 	}
 
-	public int getPhase1Cnt() {
-		return phase1Cnt;
-	}
-
-	public void setPhase1Cnt(int phase1Cnt) {
-		this.phase1Cnt = phase1Cnt;
-	}
-
-	public int getPhase2Cnt() {
-		return phase2Cnt;
-	}
-
-	public void setPhase2Cnt(int phase2Cnt) {
-		this.phase2Cnt = phase2Cnt;
-	}
-
 	public String getStartTime() {
 		return startTime;
 	}
 
 	public void setStartTime(String startTime) {
 		this.startTime = startTime;
+	}
+
+	public Integer getPhase1Cnt() {
+		return phase1Cnt;
+	}
+
+	public void setPhase1Cnt(Integer phase1Cnt) {
+		this.phase1Cnt = phase1Cnt;
+	}
+
+	public Integer getPhase2Cnt() {
+		return phase2Cnt;
+	}
+
+	public void setPhase2Cnt(Integer phase2Cnt) {
+		this.phase2Cnt = phase2Cnt;
 	}
 
 	@Override
@@ -157,7 +157,5 @@ public class ChecklistJobInfo {
 				+ criticalQuestCnt + ", finishTime=" + finishTime + ", message=" + message + ", phase1Cnt=" + phase1Cnt
 				+ ", phase2Cnt=" + phase2Cnt + ", startTime=" + startTime + "]";
 	}
-	
-	
-}
 
+}
