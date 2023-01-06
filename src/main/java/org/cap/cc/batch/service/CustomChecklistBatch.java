@@ -43,6 +43,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
 	private Connection informixConnection;
+	
+	private Connection postgresConnection;
 
 	public void processData() {
 		try {
@@ -386,7 +388,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Set Checklist
 			if (null != contentChannel) {
 				checklist.setOutputOptions(contentChannel.getContent());
-				checklist.setChannelData(contentChannel.getChannel());
+//				checklist.setChannelData(contentChannel.getChannel());
+				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA);
 			}
 
 			// Create PrinterData
@@ -852,12 +855,29 @@ public class CustomChecklistBatch implements AutoCloseable {
 	public Connection getInformixConnection() {
 		return this.informixConnection;
 	}
+	
+	public void createPostgresDbConnection() {
+		try {
+			this.postgresConnection = DriverManager.getConnection(
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_URL),
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_USERNAME),
+					CommonUtils.getProperty(CapConfigConstants.POSTGRES_PASSWORD));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public Connection getPostgresConnection() {
+		return this.postgresConnection;
+	}
 
 	private void removeConnections() {
 
 		try {
 			if (null != getInformixConnection())
 				this.informixConnection.close();
+			if (null != getPostgresConnection())
+				this.postgresConnection.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -865,8 +885,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 	}
 
 	public CustomChecklistBatch() {
-		// Make DB Connection
+		// Create Database Connections
 		createInformixDbConnection();
+		createPostgresDbConnection();
 
 	}
 
