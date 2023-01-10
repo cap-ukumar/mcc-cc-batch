@@ -847,17 +847,17 @@ public class CustomChecklistBatch implements AutoCloseable {
 		try (PreparedStatement st = getPostgresConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
 
-			st.setInt(1, checklistEntity.getChklst_log_u());
-			st.setInt(2, checklistEntity.getTask_u());
-			st.setString(3, checklistEntity.getChk_msg_type_c());
-			st.setString(4, checklistEntity.getChk_msg_t());
-			st.setTimestamp(5, checklistEntity.getCreated_dt());
-			st.setString(6, checklistEntity.getCreated_user());
-			st.setTimestamp(7, checklistEntity.getLastupdate_dt());
-			st.setString(8, checklistEntity.getLastupdate_user());
-			st.setInt(9, checklistEntity.getCreated_pgm_c());
-			st.setInt(10, checklistEntity.getUpdated_pgm_c());
-			st.setString(11, checklistEntity.getRecord_source());
+			
+			st.setInt(1, checklistEntity.getTask_u());
+			st.setString(2, checklistEntity.getChk_msg_type_c());
+			st.setString(3, checklistEntity.getChk_msg_t());
+			st.setTimestamp(4, checklistEntity.getCreated_dt());
+			st.setString(5, checklistEntity.getCreated_user());
+			st.setTimestamp(6, checklistEntity.getLastupdate_dt());
+			st.setString(7, checklistEntity.getLastupdate_user());
+			st.setInt(8, checklistEntity.getCreated_pgm_c());
+			st.setInt(9, checklistEntity.getUpdated_pgm_c());
+			st.setString(10, checklistEntity.getRecord_source());
 
 			chklst = st.executeUpdate();
 
