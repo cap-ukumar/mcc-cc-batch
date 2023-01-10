@@ -309,7 +309,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			 * Inserting Audit Record
 			 */
 			insertAuditRecord(auditEntity);
-//			insertAuditRecordToMCCDB(auditEntity, checklistRequest);
+			insertAuditRecordToMCCDB(auditEntity, checklistRequest);
 
 		} catch (Exception ex) {
 			logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequest);
@@ -318,7 +318,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	private int insertAuditRecordToMCCDB(ChecklistAuditEntity auditEntity, ChecklistRequest checklistRequest) {
+	public Integer insertAuditRecordToMCCDB(ChecklistAuditEntity auditEntity, ChecklistRequest checklistRequest) {
 		Integer audit = null;
 		try (PreparedStatement st = getPostgresConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_AUDIT_CHECKLIST_MCC_DB);) {
