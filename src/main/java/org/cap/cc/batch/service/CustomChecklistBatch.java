@@ -47,23 +47,21 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	private Connection postgresConnection;
 
-
-	private Connection postgresConnection;
-	
 	public void processData() {
 
 		// Get Available TaskId
-		Integer ccTaskId;
-		try {
-			ccTaskId = Optional.ofNullable(getAvailableTaskId())
-					.orElseThrow(() -> new Exception("TaskId isn't fetched"));
+		Integer ccTaskId = null;
+		while (null != getAvailableTaskId()) {
+			ccTaskId = getAvailableTaskId();
 			logger.info("taskId: {}", ccTaskId);
-		} catch (Exception e) {
-			logger.error("No TaskId returned");
+			processData(ccTaskId);
 		}
-		
+		/*
+		 * Outside while
+		 */
+		logger.info("No TaskId returned");
+
 	}
-	
 
 	public void processData(int ccTaskId) {
 		try {
@@ -394,7 +392,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			/*
 			 * Inserting Audit Record
 			 */
-				insertAuditRecord(auditEntity);
+			insertAuditRecord(auditEntity);
 
 		} catch (Exception ex) {
 			logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequest);
@@ -581,9 +579,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 //			logger.info("{}", statusCode); // 200
 
 			HttpEntity entity = response.getEntity();
-//			if (statusCode == 200 && null != entity) {
+			if (statusCode == 200 && null != entity) {
 			result = EntityUtils.toString(entity);
-//			}
+			}else {
+				throw new Exception("Post request is not successful: \n"+EntityUtils.toString(entity));
+			}
 		} catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
