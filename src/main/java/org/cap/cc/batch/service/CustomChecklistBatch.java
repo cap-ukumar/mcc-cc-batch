@@ -338,14 +338,14 @@ public class CustomChecklistBatch implements AutoCloseable {
 			Timestamp currentTimeStamp = Timestamp.valueOf(
 					LocalDateTime.parse(LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER),
 							CustomChecklistConstants.DATE_TIME_FORMATTER));
-			st.setTimestamp(7,currentTimeStamp);
+			st.setTimestamp(7, currentTimeStamp);
 			st.setInt(8, null != auditEntity.getSeq_no_u() ? auditEntity.getSeq_no_u() : 0);
 			st.setString(9, auditEntity.getLap_packet_type_c());
 			st.setString(10, json);
 			st.setString(11, "Y");
-			st.setTimestamp(12,currentTimeStamp);
+			st.setTimestamp(12, currentTimeStamp);
 			st.setString(13, CustomChecklistConstants.UPDATE_USER_U_VALUE);
-			st.setTimestamp(14,currentTimeStamp);
+			st.setTimestamp(14, currentTimeStamp);
 			st.setString(15, CustomChecklistConstants.UPDATE_USER_U_VALUE);
 			st.setInt(16, CustomChecklistConstants.PROGRAM_ID);
 			st.setInt(17, CustomChecklistConstants.PROGRAM_ID);
@@ -361,16 +361,41 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private String createJsonforQuadientProcess(ChecklistRequest checklistRequest) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{");
-		builder.append(" \"binTypeCode\": null,\n" + "          \"collationGroupCode\": \" \",\n"
-				+ "          \"paperColorForFirstPage\": \" \",\n" + "          \"paperColorForSecondPage\": \" \",\n"
-				+ "          \"numberCopies\": \" \",\n" + "          \"printJob\": \" \",\n"
-				+ "          \"printTask\": \" \",\n" + "          \"vPOMPrintQ\": \" \",\n"
-				+ "          \"printer\": \" \",\n" + "          \"itemNumber\": \" \",");
+		builder.append("\"binTypeCode\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"collationGroupCode\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"numberCopies\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"printJob\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"printTask\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"vPOMPrintQ\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"printer\": ");
+		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"itemNumber\": ");
+		builder.append("\" \"");
+		builder.append(",");
 		builder.append("\"duplexFlag\": ");
 		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
 		builder.append(",");
 		builder.append("\"stapleFlag\": ");
 		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForFirstPage\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForSecondPage\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
 		builder.append(",");
 		builder.append("\"paperType\": ");
 		builder.append("\"" + checklistRequest.getPrinterData().getMediaType() + "\"");
@@ -456,8 +481,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Set Checklist
 			if (null != contentChannel) {
 				checklist.setOutputOptions(contentChannel.getContent());
-				checklist.setChannelData(contentChannel.getChannel());
-//				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA);
+//				checklist.setChannelData(contentChannel.getChannel());
+				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA);
 			}
 
 			// Create PrinterData
