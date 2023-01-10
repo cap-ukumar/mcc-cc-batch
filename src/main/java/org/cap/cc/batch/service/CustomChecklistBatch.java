@@ -23,6 +23,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
 import org.cap.cc.batch.model.AuditChecklistEntity;
+import org.cap.cc.batch.model.ChecklistEntity;
 import org.cap.cc.batch.model.ChecklistJobInfo;
 import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
@@ -43,7 +44,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
 
 	private Connection informixConnection;
-	
+
 	private Connection postgresConnection;
 
 	public void processData() {
@@ -841,6 +842,31 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return object;
 	}
 
+	public Integer insertchklst(ChecklistEntity checklistEntity) {
+		Integer chklst = null;
+		try (PreparedStatement st = getPostgresConnection()
+				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
+
+			st.setInt(1, checklistEntity.getChklst_log_u());
+			st.setInt(2, checklistEntity.getTask_u());
+			st.setString(3, checklistEntity.getChk_msg_type_c());
+			st.setString(4, checklistEntity.getChk_msg_t());
+			st.setTimestamp(5, checklistEntity.getCreated_dt());
+			st.setString(6, checklistEntity.getCreated_user());
+			st.setTimestamp(7, checklistEntity.getLastupdate_dt());
+			st.setString(8, checklistEntity.getLastupdate_user());
+			st.setInt(9, checklistEntity.getCreated_pgm_c());
+			st.setInt(10, checklistEntity.getUpdated_pgm_c());
+			st.setString(11, checklistEntity.getRecord_source());
+
+			chklst = st.executeUpdate();
+
+		} catch (Exception e) {
+			logger.debug("Exception in insert chklst log table(): {}", e.getMessage());
+		}
+		return chklst;
+	}
+
 	public void createInformixDbConnection() {
 		try {
 			this.informixConnection = DriverManager.getConnection(
@@ -855,7 +881,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 	public Connection getInformixConnection() {
 		return this.informixConnection;
 	}
-	
+
 	public void createPostgresDbConnection() {
 		try {
 			this.postgresConnection = DriverManager.getConnection(
