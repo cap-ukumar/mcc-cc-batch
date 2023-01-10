@@ -147,11 +147,11 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 	}
 
 	@Test
-	public void updateUser_u_columnTest() {
+	public void updateUserForTaskIdTest() {
 
 		int result = -1;
 		int taskId = 345567;
-		result = updateUser_u_column(taskId);
+		result = updateUserForTaskId(taskId);
 		assertNotNull(result);
 	}
 
@@ -210,7 +210,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		int counter=0;
 		ChecklistJobInfoRequest request=new ChecklistJobInfoRequest();
 		List<ChecklistJobInfoRequest> checklistJobInfoRequests = new ArrayList<>();
-		Boolean allJobsComplete=getThunderheadBatchJobStatus(ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests);
+		Boolean allJobsComplete=getThunderheadBatchJobStatus(ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests, new ArrayList<>());
 		assertNotNull(counter);
 	}
 	
