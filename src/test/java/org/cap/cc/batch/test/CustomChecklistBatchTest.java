@@ -147,11 +147,11 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 	}
 
 	@Test
-	public void updateUser_u_columnTest() {
+	public void updateUserForTaskIdTest() {
 
 		int result = -1;
 		int taskId = 345567;
-		result = updateUser_u_column(taskId);
+		result = updateUserForTaskId(taskId);
 		assertNotNull(result);
 	}
 
