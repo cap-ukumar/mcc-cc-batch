@@ -63,7 +63,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			totalTasks++;
 		}
 		logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, String.valueOf(totalTasks),
-				String.valueOf(totalTasks-processedTasks));
+				String.valueOf(totalTasks - processedTasks));
 	}
 
 	public boolean processData(int ccTaskId) {
@@ -378,8 +378,27 @@ public class CustomChecklistBatch implements AutoCloseable {
 		builder.append("\"collationGroupCode\": ");
 		builder.append("\" \"");
 		builder.append(",");
+		builder.append("\"duplexFlag\": ");
+		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
+		builder.append(",");
+		builder.append("\"stapleFlag\": ");
+		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForFirstPage\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForSecondPage\": ");
+//		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
+		builder.append("\" \"");
+		builder.append(",");
 		builder.append("\"numberCopies\": ");
 		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"paperType\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaType() + "\"");
+		builder.append(",");
+		builder.append("\"printSetDefnCode\": ");
+		builder.append("\"" + checklistRequest.getPrintSetDetailC() + "\"");
 		builder.append(",");
 		builder.append("\"printJob\": ");
 		builder.append("\" \"");
@@ -393,29 +412,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 		builder.append("\"printer\": ");
 		builder.append("\" \"");
 		builder.append(",");
-		builder.append("\"itemNumber\": ");
-		builder.append("\" \"");
-		builder.append(",");
-		builder.append("\"duplexFlag\": ");
-		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
-		builder.append(",");
-		builder.append("\"stapleFlag\": ");
-		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
-		builder.append(",");
-		builder.append("\"paperColorForFirstPage\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
-		builder.append(",");
-		builder.append("\"paperColorForSecondPage\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
-		builder.append(",");
-		builder.append("\"paperType\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaType() + "\"");
-		builder.append(",");
-		builder.append("\"printSetDefnCode\": ");
-		builder.append("\"" + checklistRequest.getPrintSetDetailC() + "\"");
-		builder.append(",");
 		builder.append("\"taskNumber\": ");
 		builder.append("\"" + checklistRequest.getTaskU() + "\"");
+		builder.append(",");
+		builder.append("\"itemNumber\": ");
+		builder.append("\" \"");
 		builder.append("}");
 		return builder.toString();
 	}
