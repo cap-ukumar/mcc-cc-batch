@@ -101,6 +101,8 @@ public class CustomChecklistConstants {
 	public static final String LOG_MSG_TYPE_FAILED = "F";
 	
 	public static final String LOG_STARTED_PROCESSING_TASK = " - Started processing task %d by submitting checklists:";
+	
+	public static final String LOG_CHECKLIST_DETAILS =  "- %s, Edition: %s of AU: %s, SU: %s";
 
 	public static final String LOG_TOTAL_PROCESSED_TASKS = " - Total processed tasks:	";
 

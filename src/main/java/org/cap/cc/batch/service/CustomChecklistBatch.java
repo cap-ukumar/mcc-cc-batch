@@ -721,6 +721,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				obj.setPacketType(rs.getString(CustomChecklistConstants.PACKET_TYPE));
 				obj.setPrintSetDetailC(rs.getString(CustomChecklistConstants.PRINT_SET_DETAIL_C));
 				list.add(obj);
+				logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId, obj.getModuleId(), obj.getEditionId(), obj.getAuId(), obj.getSuId());
 			}
 		} catch (Exception e) {
 			logger.debug("Exception in getBasicChecklistDetails():: {}", e.getMessage());
@@ -941,7 +942,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				logger.info(CustomChecklistConstants.LOG_DIVIDER);
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
 						timeInstant + CustomChecklistConstants.LOG_TOTAL_PROCESSED_TASKS + strings[0]);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_WARNING,
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
 						timeInstant + CustomChecklistConstants.LOG_TOTAL_FAILED_TASKS + strings[1]);
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
 						CustomChecklistConstants.LOG_DIVIDER);
@@ -953,7 +954,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 			case STARTED_PROCESSING_TASK:
 				String message = String.format(CustomChecklistConstants.LOG_STARTED_PROCESSING_TASK, taskId);
 				logger.info("{}{}", timeInstant, message);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_FAILED, timeInstant + message);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + message);
+				break;
+			case SUBMIT_CHECKLIST:
+				String checklist = String.format(CustomChecklistConstants.LOG_CHECKLIST_DETAILS, strings[0], strings[1], strings[2], strings[3]);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + checklist);
 				break;
 			default:
 				logger.info("");
