@@ -22,6 +22,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
+import org.cap.cc.batch.dao.CustomLoggingEvents;
 import org.cap.cc.batch.model.ChecklistAuditEntity;
 import org.cap.cc.batch.model.ChecklistLogEntity;
 import org.cap.cc.batch.model.ChecklistJobInfo;
@@ -54,7 +55,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 		while (null != getAvailableTaskId() && i < counter) {
 			ccTaskId = getAvailableTaskId();
 			logger.info("taskId: {}", ccTaskId);
+			logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId);
 			processData(ccTaskId);
+			logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId);
 			i++;
 		}
 
@@ -74,7 +77,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("filePath: {}", ccFilePath);
 
 			// Interrupt
-//			System.exit(0);
+			System.exit(0);
 
 			/*
 			 * Update User_u of ptt_task
@@ -240,7 +243,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return allJobsComplete;
 	}
 
-	private void saveAuditRecord(ChecklistRequest checklistRequest) {
+	public void saveAuditRecord(ChecklistRequest checklistRequest) {
 
 		/*
 		 * Insert Logic
@@ -358,7 +361,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return audit;
 	}
 
-	private String createJsonforQuadientProcess(ChecklistRequest checklistRequest) {
+	public String createJsonforQuadientProcess(ChecklistRequest checklistRequest) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{");
 		builder.append("\"binTypeCode\": ");
@@ -591,22 +594,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
 		return result;
-	}
-
-	public ChecklistRequest dummyRequest() {
-		ChecklistRequest dummy = new ChecklistRequest();
-		dummy.setUserName("webrw");
-		dummy.setEditionId("06042020");
-		dummy.setModuleId("COM");
-		dummy.setAuId("1186464");
-		dummy.setSuId("1319526");
-		dummy.setActEffectiveDt("02/09/2021 00:00:00");
-		dummy.setOutputOptions("CUSTOMINSR");
-		dummy.setChannelData("IPDFFINAL");
-		PrinterData printerData = new PrinterData("NA", "", "", false, false);
-		dummy.setPrinterData(printerData);
-		return dummy;
-
 	}
 
 	public String getCustomChecklistFilePath() {
@@ -931,22 +918,38 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return object;
 	}
 
-	public Integer insertChecklistLog(ChecklistLogEntity checklistEntity) {
+	public void logEventInMccDB(CustomLoggingEvents event, int taskId, String... strings) {
+		String timeInstant = LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER);
+		switch (event) {
+		case BATCH_STARTED:
+			logger.info("-----------------------------------------------------------------");
+			logger.info(timeInstant + " - C C B A T C H   S T A R T E D");
+			logger.info("-----------------------------------------------------------------");
+			insertChecklistLog(taskId, "I", timeInstant + " - C C B A T C H   S T A R T E D");
+			break;
+		case BATCH_FINISHED:
+			logger.info("-----------------------------------------------------------------");
+			logger.info(timeInstant + " - C C B A T C H   F I N I S H E D");
+			logger.info("-----------------------------------------------------------------");
+			break;
+		default:
+			logger.info("");
+		}
+	}
+
+	public Integer insertChecklistLog(int taskId, String messageType, String message) {
 		Integer chklst = null;
 		try (PreparedStatement st = getPostgresConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
 
-			st.setInt(1, checklistEntity.getChklst_log_u());
-			st.setInt(2, checklistEntity.getTask_u());
-			st.setString(3, checklistEntity.getChk_msg_type_c());
-			st.setString(4, checklistEntity.getChk_msg_t());
-			st.setTimestamp(5, checklistEntity.getCreated_dt());
-			st.setString(6, checklistEntity.getCreated_user());
-			st.setTimestamp(7, checklistEntity.getLastupdate_dt());
-			st.setString(8, checklistEntity.getLastupdate_user());
-			st.setInt(9, checklistEntity.getCreated_pgm_c());
-			st.setInt(10, checklistEntity.getUpdated_pgm_c());
-			st.setString(11, checklistEntity.getRecord_source());
+			st.setInt(1, taskId);
+			st.setString(2, messageType);
+			st.setString(3, message);
+			st.setString(4, CustomChecklistConstants.UPDATE_USER_U_VALUE);
+			st.setString(5, CustomChecklistConstants.UPDATE_USER_U_VALUE);
+			st.setInt(6, CustomChecklistConstants.PROGRAM_ID);
+			st.setInt(7, CustomChecklistConstants.PROGRAM_ID);
+			st.setString(8, "source");
 
 			chklst = st.executeUpdate();
 
@@ -956,7 +959,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return chklst;
 	}
 
-	public void createInformixDbConnection() {
+	private void createInformixDbConnection() {
 		try {
 			this.informixConnection = DriverManager.getConnection(
 					CommonUtils.getProperty(CapConfigConstants.INFORMIX_URL),
@@ -971,7 +974,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return this.informixConnection;
 	}
 
-	public void createPostgresDbConnection() {
+	private void createPostgresDbConnection() {
 		try {
 			this.postgresConnection = DriverManager.getConnection(
 					CommonUtils.getProperty(CapConfigConstants.POSTGRES_URL),
