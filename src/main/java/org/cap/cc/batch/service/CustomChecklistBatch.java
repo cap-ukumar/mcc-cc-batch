@@ -63,7 +63,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			totalTasks++;
 		}
 		logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, String.valueOf(totalTasks),
-				String.valueOf(processedTasks));
+				String.valueOf(totalTasks-processedTasks));
 	}
 
 	public boolean processData(int ccTaskId) {
@@ -78,7 +78,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("filePath: {}", ccFilePath);
 
 			// Interrupt
-//			System.exit(0);
+			System.exit(0);
 
 			/*
 			 * Update User_u of ptt_task
