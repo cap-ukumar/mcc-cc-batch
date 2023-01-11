@@ -88,5 +88,18 @@ public class CustomChecklistConstants {
 	
 	//Logging constants
 	
+	public static final String LOG_DIVIDER = "-----------------------------------------------------------------";
+	
+	public static final String LOG_CC_BATCH_STARTED = " - C C B A T C H   S T A R T E D";
+	
+	public static final String LOG_CC_BATCH_FINISHED = " - C C B A T C H   F I N I S H E D";
+	
+	public static final String LOG_MSG_TYPE_INFORMATIONAL = "I";
+	
+	public static final String LOG_MSG_TYPE_WARNING = "W";
+	
+	public static final String LOG_MSG_TYPE_FAILED = "F";
+	
+	public static final String LOG_STARTED_PROCESSING_TASK = " - Started processing task %d by submitting checklists:";
 
 }
