@@ -942,6 +942,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		try (PreparedStatement st = getPostgresConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
 
+
 			st.setInt(1, taskId);
 			st.setString(2, messageType);
 			st.setString(3, message);
@@ -950,6 +951,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			st.setInt(6, CustomChecklistConstants.PROGRAM_ID);
 			st.setInt(7, CustomChecklistConstants.PROGRAM_ID);
 			st.setString(8, "source");
+
 
 			chklst = st.executeUpdate();
 
