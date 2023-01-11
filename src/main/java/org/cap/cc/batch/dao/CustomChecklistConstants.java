@@ -108,4 +108,8 @@ public class CustomChecklistConstants {
 
 	public static final String LOG_TOTAL_FAILED_TASKS = " - Total failed tasks:	";
 
+	public static final String LOG_STARTED_CHECKING_THUNDERHEAD_JOB_STATUS = " - Started checking Thunderhead job status for the task %d";
+	
+	public static final String LOG_FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS = " - Returned %s Thunderhead job status for the task %s";
+
 }
