@@ -2,7 +2,7 @@ package org.cap.cc.batch.model;
 
 import java.sql.Timestamp;
 
-public class ChecklistEntity {
+public class ChecklistLogEntity {
 
 	private Integer chklst_log_u;
 	private Integer task_u;

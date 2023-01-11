@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter;
 
 public class CustomChecklistConstants {
 	
-	public static final String INSERT_LOG_MCC_DB = "INSERT INTO mccf.chklst_log ( task_u, chk_msg_type_c, chk_msg_t, created_dt, created_user, lastupdate_dt, lastupdate_user, created_pgm_c, updated_pgm_c, record_source ) VALUES ( ?, ?, ?, ?, ?,? , ?, ?, ?, ? );";
+	public static final String INSERT_LOG_MCC_DB = "INSERT INTO chklst_log ( task_u, chk_msg_type_c, chk_msg_t, created_dt, created_user, lastupdate_dt, lastupdate_user, created_pgm_c, updated_pgm_c, record_source ) VALUES ( ?, ?, ?, NOW(), ?, NOW(), ?, ?, ?, ? );";
 
 	public static final String GET_CUSTOM_CHECKLIST_FILE_PATH = "SELECT Trim(c147.column_data_t) || DECODE (weekday(to_date(trim(c1.column_data_t),'%m/%d/%Y')) , 1, 'Monday', 2, 'Tuesday', 3, 'Wednesday', 4, 'Thursday', 5, 'Friday', 6, 'Saturday', 0, 'Sunday') || '/' as FilePath     FROM ptt_std_code_col c147, ptt_standard_codes s, ptt_std_code_col c1 WHERE      c147.table_u = 147      AND Trim(c147.key_u) = '39' AND Trim(c147.column_type_u)  = 'PATH'     AND s.table_u = 1 AND s.key_u = 'LAPCURRDT'  AND current BETWEEN s.effective_dt and s.termination_dt AND s.table_u = c1.table_u AND s.key_u = c1.key_u AND c1.column_type_u = 'DATE'  AND c1.column_data_t IS NOT NULL AND trim(c1.column_data_t) <> '';";
 
@@ -37,6 +37,8 @@ public class CustomChecklistConstants {
 	public static final String GET_JOB_COMPLETION_ITERATIONS = "SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
 	
 	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, supl_from_dt, supl_from_audit_u, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, tot_qst_cust_cri_q, tot_qst_supl_ph1_q, tot_qst_supl_ph2_q, tot_qst_supl_cri_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
+	
+	public static final String INSERT_AUDIT_CHECKLIST_MCC_DB = "INSERT INTO CHKLST_AUDIT ( TASK_U, ITEM_SEQ_U, AU_U, SU_U, CHKLST_MODULE_C, CHKLST_EDITION_U, CHKLST_EDITION_DT, CYCLE_SEQ_NO_U, LAP_PKT_TYPE_C, CHKLST_JSON_N, ACTIVE_F, CREATED_DT, CREATED_USER, LASTUPDATE_DT, LASTUPDATE_USER, CREATED_PGM_C, UPDATED_PGM_C, RECORD_SOURCE ) VALUES ( ?,  ?, ? , ?, ?, ?, ?, ?, ? , ?::json, ?, ?, ?, ?, ?, ?, ?, ? );";
 	
 	public static final String GET_AUDIT_RECORDS_OF_PACKET = "SELECT   chklst_audit_u,   abe_au_u,   print_us_reg_qst_f,   abe_su_u,   module_key_c,   chklst_edition_u,   lap_packet_type_c,   chklst_type_c,   supl_from_dt,   supl_from_audit_u,   chklst_eff_dt,   seq_no_u,   tot_qst_cust_ph1_q,   tot_qst_cust_ph2_q,   tot_qst_supl_ph1_q,   tot_qst_supl_ph2_q,   tot_qst_cust_cri_q,   tot_qst_supl_cri_q,    chklst_creation_dt,   last_update_dt,   update_user_u,   invoking_pgm_c,   update_pgm_c FROM  lpt_chklst_audit  WHERE (   abe_au_u = ? ) AND  (   abe_su_u = ? ) ;";
 
@@ -85,5 +87,6 @@ public class CustomChecklistConstants {
 	public static final String EXTENSION_PDF = "pdf";
 	
 	//Logging constants
+	
 
 }
