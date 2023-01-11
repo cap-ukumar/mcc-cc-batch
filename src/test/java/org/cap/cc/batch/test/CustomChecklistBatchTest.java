@@ -210,7 +210,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		int counter=0;
 		ChecklistJobInfoRequest request=new ChecklistJobInfoRequest();
 		List<ChecklistJobInfoRequest> checklistJobInfoRequests = new ArrayList<>();
-		Boolean allJobsComplete=getThunderheadBatchJobStatus(ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests, new ArrayList<>());
+		Boolean allJobsComplete=getThunderheadBatchJobStatus(0, ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests, new ArrayList<>());
 		assertNotNull(counter);
 	}
 	

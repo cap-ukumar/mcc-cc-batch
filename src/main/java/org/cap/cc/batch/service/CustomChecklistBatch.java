@@ -49,27 +49,28 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private Connection postgresConnection;
 
 	public void processData() {
-		int i = 0, counter = 1;
+		int totalTasks = 0;
+		int processedTasks = 0;
+		int counter = 1;
 		// Get Unprocessed TaskId
 		Integer ccTaskId = null;
-		while (null != getAvailableTaskId() && i < counter) {
+		while (null != getAvailableTaskId() && totalTasks < counter) {
 			ccTaskId = getAvailableTaskId();
-			logger.info("taskId: {}", ccTaskId);
 			logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId);
-			processData(ccTaskId);
-			logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId);
-			i++;
+			boolean status = processData(ccTaskId);
+			if (status)
+				processedTasks++;
+			totalTasks++;
 		}
-
-		/*
-		 * Outside while
-		 */
-		logger.info("No TaskId returned");
-
+		logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, String.valueOf(totalTasks),
+				String.valueOf(totalTasks - processedTasks));
 	}
 
-	public void processData(int ccTaskId) {
+	public boolean processData(int ccTaskId) {
+		boolean jobStatus = false;
 		try {
+
+			logEventInMccDB(CustomLoggingEvents.STARTED_PROCESSING_TASK, ccTaskId);
 
 			// Get CustomChecklist FilePath
 			final String ccFilePath = Optional.ofNullable(getCustomChecklistFilePath())
@@ -113,8 +114,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 				/*
 				 * Generate Custom Checklists & Get Thunderhead Batchjob Status
 				 */
-				boolean jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl,
-						pollingInterval, iterations, checklistRequests);
+				jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, pollingInterval,
+						iterations, checklistRequests);
 
 				if (jobStatus) {
 					logger.info("Thunderhead jobs completed successfully for taskId: {} ", ccTaskId);
@@ -129,6 +130,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
 		}
+		return jobStatus;
 	}
 
 	public boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
@@ -185,9 +187,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 		 * Get Thunderhead BatchJob Status
 		 */
 		logger.info("\nStart Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
+		logEventInMccDB(CustomLoggingEvents.STARTED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId);
 		try {
-			jobStatus = getThunderheadBatchJobStatus(ccWebServiceUrl, pollingInterval, iterations,
+			jobStatus = getThunderheadBatchJobStatus(ccTaskId, ccWebServiceUrl, pollingInterval, iterations,
 					checklistJobInfoRequests, checklistRequests);
+			String logJobStatus = jobStatus ? "SUCCESSFUL" : "UNSUCCESSFUL";
+			logEventInMccDB(CustomLoggingEvents.FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId, logJobStatus);
 		} catch (Exception e) {
 			logger.info("Exception{}", e.getMessage());
 		}
@@ -196,7 +201,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	}
 
-	public boolean getThunderheadBatchJobStatus(final String ccWebServiceUrl, Integer pollingInterval,
+	public boolean getThunderheadBatchJobStatus(Integer ccTaskId, final String ccWebServiceUrl, Integer pollingInterval,
 			Integer iterations, List<ChecklistJobInfoRequest> checklistJobInfoRequests,
 			List<ChecklistRequest> checklistRequests) {
 		final int size = checklistJobInfoRequests.size();
@@ -309,9 +314,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			logger.info("\nInserting Audit Record\n{}\n", parsePojoToJsonString(auditEntity));
 			/*
-			 * Inserting Audit Record
+			 * Inserting Audit Record to INFORMIX
 			 */
 			insertAuditRecord(auditEntity);
+			/*
+			 * Save Audit Record to POSTGRES/ MCC DB
+			 */
 			insertAuditRecordToMCCDB(auditEntity, checklistRequest);
 
 		} catch (Exception ex) {
@@ -370,8 +378,27 @@ public class CustomChecklistBatch implements AutoCloseable {
 		builder.append("\"collationGroupCode\": ");
 		builder.append("\" \"");
 		builder.append(",");
+		builder.append("\"duplexFlag\": ");
+		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
+		builder.append(",");
+		builder.append("\"stapleFlag\": ");
+		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForFirstPage\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
+		builder.append(",");
+		builder.append("\"paperColorForSecondPage\": ");
+//		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
+		builder.append("\" \"");
+		builder.append(",");
 		builder.append("\"numberCopies\": ");
 		builder.append("\" \"");
+		builder.append(",");
+		builder.append("\"paperType\": ");
+		builder.append("\"" + checklistRequest.getPrinterData().getMediaType() + "\"");
+		builder.append(",");
+		builder.append("\"printSetDefnCode\": ");
+		builder.append("\"" + checklistRequest.getPrintSetDetailC() + "\"");
 		builder.append(",");
 		builder.append("\"printJob\": ");
 		builder.append("\" \"");
@@ -385,29 +412,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 		builder.append("\"printer\": ");
 		builder.append("\" \"");
 		builder.append(",");
-		builder.append("\"itemNumber\": ");
-		builder.append("\" \"");
-		builder.append(",");
-		builder.append("\"duplexFlag\": ");
-		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
-		builder.append(",");
-		builder.append("\"stapleFlag\": ");
-		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
-		builder.append(",");
-		builder.append("\"paperColorForFirstPage\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
-		builder.append(",");
-		builder.append("\"paperColorForSecondPage\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
-		builder.append(",");
-		builder.append("\"paperType\": ");
-		builder.append("\"" + checklistRequest.getPrinterData().getMediaType() + "\"");
-		builder.append(",");
-		builder.append("\"printSetDefnCode\": ");
-		builder.append("\"" + checklistRequest.getPrintSetDetailC() + "\"");
-		builder.append(",");
 		builder.append("\"taskNumber\": ");
 		builder.append("\"" + checklistRequest.getTaskU() + "\"");
+		builder.append(",");
+		builder.append("\"itemNumber\": ");
+		builder.append("\" \"");
 		builder.append("}");
 		return builder.toString();
 	}
@@ -720,6 +729,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 				obj.setPacketType(rs.getString(CustomChecklistConstants.PACKET_TYPE));
 				obj.setPrintSetDetailC(rs.getString(CustomChecklistConstants.PRINT_SET_DETAIL_C));
 				list.add(obj);
+				logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId, obj.getModuleId(), obj.getEditionId(),
+						obj.getAuId(), obj.getSuId());
 			}
 		} catch (Exception e) {
 			logger.debug("Exception in getBasicChecklistDetails():: {}", e.getMessage());
@@ -919,21 +930,65 @@ public class CustomChecklistBatch implements AutoCloseable {
 	}
 
 	public void logEventInMccDB(CustomLoggingEvents event, int taskId, String... strings) {
-		String timeInstant = LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER);
-		switch (event) {
-		case BATCH_STARTED:
-			logger.info("-----------------------------------------------------------------");
-			logger.info(timeInstant + " - C C B A T C H   S T A R T E D");
-			logger.info("-----------------------------------------------------------------");
-			insertChecklistLog(taskId, "I", timeInstant + " - C C B A T C H   S T A R T E D");
-			break;
-		case BATCH_FINISHED:
-			logger.info("-----------------------------------------------------------------");
-			logger.info(timeInstant + " - C C B A T C H   F I N I S H E D");
-			logger.info("-----------------------------------------------------------------");
-			break;
-		default:
-			logger.info("");
+		try {
+			String timeInstant = LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER);
+			switch (event) {
+			case BATCH_STARTED:
+				logger.info(CustomChecklistConstants.LOG_DIVIDER);
+				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_STARTED);
+				logger.info(CustomChecklistConstants.LOG_DIVIDER);
+
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						CustomChecklistConstants.LOG_DIVIDER);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + CustomChecklistConstants.LOG_CC_BATCH_STARTED);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						CustomChecklistConstants.LOG_DIVIDER);
+				break;
+			case BATCH_FINISHED:
+				logger.info(CustomChecklistConstants.LOG_DIVIDER);
+				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_FINISHED);
+				logger.info(CustomChecklistConstants.LOG_DIVIDER);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + CustomChecklistConstants.LOG_TOTAL_PROCESSED_TASKS + strings[0]);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + CustomChecklistConstants.LOG_TOTAL_FAILED_TASKS + strings[1]);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						CustomChecklistConstants.LOG_DIVIDER);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + CustomChecklistConstants.LOG_CC_BATCH_FINISHED);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						CustomChecklistConstants.LOG_DIVIDER);
+				break;
+			case STARTED_PROCESSING_TASK:
+				String message = String.format(CustomChecklistConstants.LOG_STARTED_PROCESSING_TASK, taskId);
+				logger.info("{}{}", timeInstant, message);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + message);
+				break;
+			case SUBMIT_CHECKLIST:
+				String checklist = String.format(CustomChecklistConstants.LOG_CHECKLIST_DETAILS, strings[0], strings[1],
+						strings[2], strings[3]);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + checklist);
+				break;
+			case STARTED_CHECKING_THUNDERHEAD_JOB_STATUS:
+				String message1 = String.format(CustomChecklistConstants.LOG_STARTED_CHECKING_THUNDERHEAD_JOB_STATUS,
+						taskId);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + message1);
+				break;
+			case FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS:
+				String status = String.format(CustomChecklistConstants.LOG_FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS,
+						strings[0], taskId);
+				String msgType = strings[0].equals("SUCCESSFUL") ? CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL
+						: CustomChecklistConstants.LOG_MSG_TYPE_WARNING;
+				insertChecklistLog(taskId, msgType, timeInstant + status);
+				break;
+			default:
+				logger.info("");
+			}
+		} catch (Exception ex) {
+			logger.error("Error in logEventInMccDB():: {}", ex.getMessage());
+
 		}
 	}
 
@@ -941,7 +996,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 		Integer chklst = null;
 		try (PreparedStatement st = getPostgresConnection()
 				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
-
 
 			st.setInt(1, taskId);
 			st.setString(2, messageType);
@@ -951,7 +1005,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 			st.setInt(6, CustomChecklistConstants.PROGRAM_ID);
 			st.setInt(7, CustomChecklistConstants.PROGRAM_ID);
 			st.setString(8, "source");
-
 
 			chklst = st.executeUpdate();
 

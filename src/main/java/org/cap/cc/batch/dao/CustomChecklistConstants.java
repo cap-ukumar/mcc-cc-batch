@@ -88,5 +88,28 @@ public class CustomChecklistConstants {
 	
 	//Logging constants
 	
+	public static final String LOG_DIVIDER = "-----------------------------------------------------------------";
+	
+	public static final String LOG_CC_BATCH_STARTED = " - C C B A T C H   S T A R T E D";
+	
+	public static final String LOG_CC_BATCH_FINISHED = " - C C B A T C H   F I N I S H E D";
+	
+	public static final String LOG_MSG_TYPE_INFORMATIONAL = "I";
+	
+	public static final String LOG_MSG_TYPE_WARNING = "W";
+	
+	public static final String LOG_MSG_TYPE_FAILED = "F";
+	
+	public static final String LOG_STARTED_PROCESSING_TASK = " - Started processing task %d by submitting checklists:";
+	
+	public static final String LOG_CHECKLIST_DETAILS =  "- %s, Edition: %s of AU: %s, SU: %s";
+
+	public static final String LOG_TOTAL_PROCESSED_TASKS = " - Total processed tasks:	";
+
+	public static final String LOG_TOTAL_FAILED_TASKS = " - Total failed tasks:	";
+
+	public static final String LOG_STARTED_CHECKING_THUNDERHEAD_JOB_STATUS = " - Started checking Thunderhead job status for the task %d";
+	
+	public static final String LOG_FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS = " - Returned %s Thunderhead job status for the task %s";
 
 }
