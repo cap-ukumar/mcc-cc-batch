@@ -49,22 +49,20 @@ public class CustomChecklistBatch implements AutoCloseable {
 	private Connection postgresConnection;
 
 	public void processData() {
-		int i = 0, counter = 1;
+		int totalTasks = 0;
+		int processedTasks = 0;
+		int counter = 1;
 		// Get Unprocessed TaskId
 		Integer ccTaskId = null;
-		while (null != getAvailableTaskId() && i < counter) {
+		while (null != getAvailableTaskId() && totalTasks < counter) {
 			ccTaskId = getAvailableTaskId();
 			logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId);
-			String status = processData(ccTaskId) ? "1" : "0";
-			logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, status);
-			i++;
+			boolean status = processData(ccTaskId);
+			if(status)
+				processedTasks++;
+			totalTasks++;
 		}
-
-		/*
-		 * Outside while
-		 */
-		logger.info("No TaskId returned");
-
+		logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, String.valueOf(totalTasks), String.valueOf(processedTasks));
 	}
 
 	public boolean processData(int ccTaskId) {
@@ -929,6 +927,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				logger.info(CustomChecklistConstants.LOG_DIVIDER);
 				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_STARTED);
 				logger.info(CustomChecklistConstants.LOG_DIVIDER);
+				
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
 						CustomChecklistConstants.LOG_DIVIDER);
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
@@ -940,7 +939,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 				logger.info(CustomChecklistConstants.LOG_DIVIDER);
 				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_FINISHED);
 				logger.info(CustomChecklistConstants.LOG_DIVIDER);
-
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
+						timeInstant + CustomChecklistConstants.LOG_TOTAL_PROCESSED_TASKS + strings[0]);
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_WARNING,
+						timeInstant + CustomChecklistConstants.LOG_TOTAL_FAILED_TASKS + strings[1]);
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
 						CustomChecklistConstants.LOG_DIVIDER);
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,

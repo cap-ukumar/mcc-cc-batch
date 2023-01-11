@@ -102,4 +102,8 @@ public class CustomChecklistConstants {
 	
 	public static final String LOG_STARTED_PROCESSING_TASK = " - Started processing task %d by submitting checklists:";
 
+	public static final String LOG_TOTAL_PROCESSED_TASKS = " - Total processed tasks:	";
+
+	public static final String LOG_TOTAL_FAILED_TASKS = " - Total failed tasks:	";
+
 }
