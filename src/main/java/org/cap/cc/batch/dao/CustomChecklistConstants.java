@@ -129,6 +129,8 @@ public class CustomChecklistConstants {
 	public static final String LOG_ERROR_CODE = "*** Error Code		= %d";
 
 	public static final String LOG_ERROR_TEXT = "*** Error Text		= %s";
+
+	public static final String EMPTY_STRING = "\" \"";
 	
 	
 

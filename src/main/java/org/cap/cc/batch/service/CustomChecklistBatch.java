@@ -391,23 +391,26 @@ public class CustomChecklistBatch implements AutoCloseable {
 		StringBuilder builder = new StringBuilder();
 		builder.append("{");
 		builder.append("\"binTypeCode\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"collationGroupCode\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"duplexFlag\": ");
 		builder.append("\"" + (checklistRequest.getPrinterData().isDuplex() ? "Y" : "N") + "\"");
 		builder.append(",");
+		/*
+		 * Value fetched from DB
+		 */
 		builder.append("\"stapleFlag\": ");
-		builder.append("\"" + (checklistRequest.getPrinterData().isStaple() ? "Y" : "N") + "\"");
+		builder.append("\"" + (checklistRequest.isStapleFlag() ? "Y" : "N") + "\"");
 		builder.append(",");
 		builder.append("\"paperColorForFirstPage\": ");
 		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
 		builder.append(",");
 		builder.append("\"paperColorForSecondPage\": ");
 //		builder.append("\"" + checklistRequest.getPrinterData().getMediaColor() + "\"");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"numberCopies\": ");
 		builder.append("\" \"");
@@ -422,19 +425,19 @@ public class CustomChecklistBatch implements AutoCloseable {
 		builder.append("\" \"");
 		builder.append(",");
 		builder.append("\"printTask\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"vPOMPrintQ\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"printer\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append(",");
 		builder.append("\"taskNumber\": ");
 		builder.append("\"" + checklistRequest.getTaskU() + "\"");
 		builder.append(",");
 		builder.append("\"itemNumber\": ");
-		builder.append("\" \"");
+		builder.append(CustomChecklistConstants.EMPTY_STRING);
 		builder.append("}");
 		return builder.toString();
 	}
@@ -508,8 +511,14 @@ public class CustomChecklistBatch implements AutoCloseable {
 					.orElseThrow(() -> new Exception("Duplex not fetched"));
 
 			// Get Staple Value
-//			String staplevalue = Optional.ofNullable(getStapleValue(printSetDetailC))
-//					.orElseThrow(() -> new Exception("Staple not fetched"));
+			String stapleFlag = Optional.ofNullable(getStapleValue(printSetDetailC))
+					.orElseThrow(() -> new Exception("Staple not fetched"));
+			
+			/*
+			 *  Staple Value for Json
+			 */
+			checklist.setStapleFlag(stapleFlag.equalsIgnoreCase("y") || stapleFlag.equalsIgnoreCase("yp"));
+			
 			String stapleValue = CustomChecklistConstants.STAPLE_VALUE;
 
 			// Get Media Color
@@ -538,7 +547,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			printerData.setStaple(stapleValue.equalsIgnoreCase("y"));
 			printerData.setMediaColor(mediaColor);
 			printerData.setMediaType(mediaType);
-			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+//			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+//					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
+			printerData.setFilePath("/inspiredev/lap/thunderhead/", ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
 					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
 
 			// Set PrinterData

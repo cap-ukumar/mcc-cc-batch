@@ -51,6 +51,17 @@ public class ChecklistRequest {
 	@JsonIgnore
 	private String printSetDetailC;
 
+	@JsonIgnore
+	private boolean stapleFlag;
+
+	public boolean isStapleFlag() {
+		return stapleFlag;
+	}
+
+	public void setStapleFlag(boolean stapleFlag) {
+		this.stapleFlag = stapleFlag;
+	}
+
 	public ChecklistResponse getChecklistResponse() {
 		return checklistResponse;
 	}
