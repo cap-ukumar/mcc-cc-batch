@@ -24,7 +24,6 @@ import org.apache.http.util.EntityUtils;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
 import org.cap.cc.batch.dao.CustomLoggingEvents;
 import org.cap.cc.batch.model.ChecklistAuditEntity;
-import org.cap.cc.batch.model.ChecklistLogEntity;
 import org.cap.cc.batch.model.ChecklistJobInfo;
 import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
@@ -493,8 +492,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Set Checklist
 			if (null != contentChannel) {
 				checklist.setOutputOptions(contentChannel.getContent());
-//				checklist.setChannelData(contentChannel.getChannel());
-				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA);
+				checklist.setChannelData(contentChannel.getChannel());
+//				checklist.setChannelData(CustomChecklistConstants.CHANNEL_DATA_PDF);
 			}
 
 			// Create PrinterData
