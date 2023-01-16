@@ -78,7 +78,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("filePath: {}", ccFilePath);
 
 			// Interrupt
-			System.exit(0);
+//			System.exit(0);
 
 			/*
 			 * Update User_u of ptt_task
@@ -547,10 +547,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 			printerData.setStaple(stapleValue.equalsIgnoreCase("y"));
 			printerData.setMediaColor(mediaColor);
 			printerData.setMediaType(mediaType);
-//			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
-//					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
-			printerData.setFilePath("/inspiredev/lap/thunderhead/", ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
 					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
+//			printerData.setFilePath("/inspiredev/lap/thunderhead/Friday/", ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+//					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
 
 			// Set PrinterData
 			checklist.setPrinterData(printerData);
