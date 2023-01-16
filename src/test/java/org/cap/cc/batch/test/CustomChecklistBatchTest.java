@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
+import org.cap.cc.batch.exception.CustomChecklistBatchException;
 import org.cap.cc.batch.model.ChecklistAuditEntity;
 import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
@@ -178,7 +179,11 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		post.addHeader(HttpHeaders.TIMEOUT, "3000");
 		String response = null;
 		response = executeHttpPostRequest(post);
-		Boolean flag = getUpdatedJobInfo(ccWebServiceUrl, request);
+		try {
+			Boolean flag = getUpdatedJobInfo(ccWebServiceUrl, request);
+		} catch (CustomChecklistBatchException e) {
+			e.printStackTrace();
+		}
 		assertNull(response);
 	}
 
