@@ -10,7 +10,7 @@ import java.util.Optional;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpPost;
 import org.cap.cc.batch.dao.CustomChecklistConstants;
-import org.cap.cc.batch.model.AuditChecklistEntity;
+import org.cap.cc.batch.model.ChecklistAuditEntity;
 import org.cap.cc.batch.model.ChecklistJobInfoRequest;
 import org.cap.cc.batch.model.ChecklistRequest;
 import org.cap.cc.batch.model.ChecklistResponse;
@@ -147,11 +147,11 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 	}
 
 	@Test
-	public void updateUser_u_columnTest() {
+	public void updateUserForTaskIdTest() {
 
 		int result = -1;
 		int taskId = 345567;
-		result = updateUser_u_column(taskId);
+		result = updateUserForTaskId(taskId);
 		assertNotNull(result);
 	}
 
@@ -210,13 +210,13 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		int counter=0;
 		ChecklistJobInfoRequest request=new ChecklistJobInfoRequest();
 		List<ChecklistJobInfoRequest> checklistJobInfoRequests = new ArrayList<>();
-		Boolean allJobsComplete=getThunderheadBatchJobStatus(ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests);
+		Boolean allJobsComplete=getThunderheadBatchJobStatus(0, ccWebServiceUrl,iterations, pollingInterval, checklistJobInfoRequests, new ArrayList<>());
 		assertNotNull(counter);
 	}
 	
 	@Test
 	public void insertAuditRecordTest() {
-		AuditChecklistEntity etity=new AuditChecklistEntity();
+		ChecklistAuditEntity etity=new ChecklistAuditEntity();
 		Integer audit=null;
 		etity.setAbe_au_u(222);
 		etity.setAbe_su_u(2222);
@@ -229,14 +229,14 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 	@Test
 	public void getAuditRecordsOfPacketTest() {
 		
-		AuditChecklistEntity audit = new AuditChecklistEntity();
-		List<AuditChecklistEntity> auditList = new ArrayList<>();
+		ChecklistAuditEntity audit = new ChecklistAuditEntity();
+		List<ChecklistAuditEntity> auditList = new ArrayList<>();
 		int auId=213;
 		int suid=24578;
 		audit.setAbe_au_u(456);
 		audit.setInvoking_pgm_c(3000);
 		auditList.add(audit);
-		List<AuditChecklistEntity> newlist=getAuditRecordsOfPacket(auId,suid);
+		List<ChecklistAuditEntity> newlist=getAuditRecordsOfPacket(auId,suid);
 		assertNotNull(newlist);
 		
 	}

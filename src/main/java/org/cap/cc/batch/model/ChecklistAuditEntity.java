@@ -2,7 +2,7 @@ package org.cap.cc.batch.model;
 
 import java.sql.Timestamp;
 
-public class AuditChecklistEntity {
+public class ChecklistAuditEntity {
 	
 	private Integer chklst_audit_u;
 	private Integer abe_au_u;
