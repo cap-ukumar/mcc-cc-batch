@@ -78,7 +78,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("filePath: {}", ccFilePath);
 
 			// Interrupt
-			System.exit(0);
+//			System.exit(0);
 
 			/*
 			 * Update User_u of ptt_task
@@ -136,10 +136,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 		} catch (CustomChecklistBatchException e) {
 			logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "processData()", e.getMessage());
-			return false;
+			jobStatus = false;
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
-			return false;
+			jobStatus = false;
 		}
 		return jobStatus;
 	}
