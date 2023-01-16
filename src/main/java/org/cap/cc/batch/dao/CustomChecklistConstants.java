@@ -116,4 +116,20 @@ public class CustomChecklistConstants {
 	
 	public static final String LOG_FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS = " - Returned %s Thunderhead job status for the task %s";
 
+	public static final String SOURCE = "Ccbatch";
+
+	public static final String LOG_ERROR_DATE_TIME = "*** Error Date/Time	= %s";
+
+	public static final String LOG_ERROR_INSTANCE_NAME = "*** Instance Name	= %s";
+
+	public static final String LOG_ERROR_CLASS_NAME = "*** Class Name		= %s";
+
+	public static final String LOG_ERROR_FUNCTION_NAME = "*** Function Name	= %s";
+
+	public static final String LOG_ERROR_CODE = "*** Error Code		= %d";
+
+	public static final String LOG_ERROR_TEXT = "*** Error Text		= %s";
+	
+	
+
 }
