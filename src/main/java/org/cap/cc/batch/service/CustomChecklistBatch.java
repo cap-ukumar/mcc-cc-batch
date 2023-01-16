@@ -1089,7 +1089,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				break;
 			case BATCH_EXCEPTION:
 				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_WARNING,
-						timeInstant + strings[0] + "\n" + strings[1]);
+						timeInstant +" " + strings[0] + "\n" + strings[1]);
 				break;
 			default:
 				logger.info("");
