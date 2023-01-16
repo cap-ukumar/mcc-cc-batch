@@ -929,6 +929,40 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return object;
 	}
 
+	/**
+	 * 
+	 * @param event
+	 * @param taskId
+	 * @param strings...
+	 * 
+	 * @category
+	 *           <h1>BATCH_STARTED:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId); <br>
+	 *           </br>
+	 *           <h1>STARTED_PROCESSING_TASK:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.STARTED_PROCESSING_TASK,
+	 *           ccTaskId); <br>
+	 *           </br>
+	 *           <h1>SUBMIT_CHECKLIST:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId,
+	 *           obj.getModuleId(), obj.getEditionId(), obj.getAuId(),
+	 *           obj.getSuId()); <br>
+	 *           </br>
+	 *           <h1>STARTED_CHECKING_THUNDERHEAD_JOB_STATUS:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.STARTED_CHECKING_THUNDERHEAD_JOB_STATUS,
+	 *           ccTaskId); <br>
+	 *           </br>
+	 *           <h1>FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS,
+	 *           ccTaskId, logJobStatus); <br>
+	 *           </br>
+	 *           <h1>BATCH_FINISHED:</h1>
+	 *           logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId,
+	 *           String.valueOf(totalTasks), String.valueOf(totalTasks -
+	 *           processedTasks));
+	 *
+	 *
+	 */
 	public void logEventInMccDB(CustomLoggingEvents event, int taskId, String... strings) {
 		try {
 			String timeInstant = LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER);
