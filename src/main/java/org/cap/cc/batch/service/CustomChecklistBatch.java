@@ -78,7 +78,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			logger.info("filePath: {}", ccFilePath);
 
 			// Interrupt
-//			System.exit(0);
+			System.exit(0);
 
 			/*
 			 * Update User_u of ptt_task
@@ -238,10 +238,14 @@ public class CustomChecklistBatch implements AutoCloseable {
 					}
 					counter++;
 				}
+			} catch (CustomChecklistBatchException ex) {
+				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+						ex.getMessage());
 			} catch (Exception e) {
 				status[i] = false;
 				// log exception in db
-				logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "getThunderheadBatchJobStatus()", e.getMessage());
+				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+						e.getMessage());
 			}
 
 			/*
@@ -253,7 +257,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				saveAuditRecord(checklistRequests.get(i));
 			} else {
 				// Log error
-				logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "getThunderheadBatchJobStatus()",
+				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
 						"Error Inserting new Audit Record for Batch Job: "
 								+ checklistJobInfoRequests.get(i).getBatchJobId() + " & Task Id: " + ccTaskId);
 			}
@@ -435,7 +439,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return builder.toString();
 	}
 
-	public Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest) {
+	public Boolean getUpdatedJobInfo(String ccWebServiceUrl, ChecklistJobInfoRequest checklistJobInfoRequest)
+			throws CustomChecklistBatchException {
 		try {
 			boolean flag = false;
 			HttpPost request = new HttpPost(ccWebServiceUrl + "job" + "?type=info");
@@ -458,19 +463,34 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			// Parse Json to Pojo
 			ChecklistJobInfo jobInfo = (ChecklistJobInfo) parseJsonStringToPojo(response, ChecklistJobInfo.class);
-			logger.info("\t{}", parsePojoToJsonString(jobInfo));
+
+			// getMessage
+			String message = null;
+			if (null != jobInfo) {
+				message = jobInfo.getMessage();
+				logger.info("\t{}", parsePojoToJsonString(jobInfo));
+			}
 
 //			 Is Batch Job completed and successful
 			if (null != jobInfo && Boolean.logicalAnd(jobInfo.isBatchJobCompleted(), jobInfo.isBatchJobSuccessful()))
 				flag = true;
-			else
+			// If message contains error throw custom exception
+			else if (null != message && !jobInfo.isBatchJobSuccessful() && isContainsErrorString(message) && jobInfo.getBatchJobStatus().equals("E")) {
+				throw new CustomChecklistBatchException(message);
+			} else
 				flag = false;
 			return flag;
 
+		} catch (CustomChecklistBatchException e) {
+			throw e;
 		} catch (Exception ex) {
 			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
 			return false;
 		}
+	}
+
+	public boolean isContainsErrorString(String message) {
+		return message.contains("Error") || message.contains("No such file or directory");
 	}
 
 	public void fetchChecklistDetails(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
@@ -976,8 +996,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 	 *           processedTasks)); <br>
 	 *           </br>
 	 *           <h1>BATCH_ERROR</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId,
-	 *           e.getMessage());
+	 *           logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId,"getThunderheadBatchJobStatus()",
+	 *           e.getMessage()); <br>
+	 *           </br>
+	 *           <h1>BATCH_EXCEPTION
+	 *           logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+						e.getMessage());
 	 *
 	 *
 	 */
@@ -1049,7 +1073,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 				builder.append("\n");
 				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_TEXT, strings[1]));
 				builder.append("\n");
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_FAILED, timeInstant + builder.toString());
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_FAILED,
+						builder.toString());
+				break;
+			case BATCH_EXCEPTION:
+				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_WARNING,
+						timeInstant + strings[0]);
 				break;
 			default:
 				logger.info("");
