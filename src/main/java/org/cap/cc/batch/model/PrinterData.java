@@ -27,8 +27,8 @@ public class PrinterData {
 
 	public void setFilePath(String filePath, Integer taskId, Integer itemSeqNo, String auId, String suId,
 			String moduleId, String editionId) {
-		String path = filePath + taskId + "_" + itemSeqNo + "_" + auId + "_" + suId + "_" + moduleId + "_" + editionId
-				+ "."+ CustomChecklistConstants.EXTENSION_PDF;
+		String path = filePath + taskId + CustomChecklistConstants.UNDERSCORE + itemSeqNo + CustomChecklistConstants.UNDERSCORE + auId + CustomChecklistConstants.UNDERSCORE + suId + CustomChecklistConstants.UNDERSCORE + moduleId + CustomChecklistConstants.UNDERSCORE + editionId
+				+ CustomChecklistConstants.DOT + CustomChecklistConstants.EXTENSION_PDF;
 		this.filePath = path;
 	}
 
