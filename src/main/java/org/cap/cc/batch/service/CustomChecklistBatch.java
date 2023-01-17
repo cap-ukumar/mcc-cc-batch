@@ -146,7 +146,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	public boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
-			final List<ChecklistRequest> checklistRequests) {
+			final List<ChecklistRequest> checklistRequests)throws CustomChecklistBatchException {
 		boolean jobStatus = false;
 
 		/*
@@ -172,7 +172,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 					String response = parsePojoToJsonString(checklistResponse);
 					logger.info("\n\t({}) Checklist Job Response::\n \t{}\n", i + 1, response);
-				} catch (Exception e) {
+				} catch (CustomChecklistBatchException ex) {
+					logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+							ex.getMessage());
+					throw ex;
+				}  catch (Exception e) {
 					logger.error("Exception submitting checklistRequest:: {}", e.getMessage());
 				}
 			}
@@ -334,7 +338,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			/*
 			 * Inserting Audit Record to INFORMIX
 			 */
-			insertAuditRecord(auditEntity);
+			int result = insertAuditRecord(auditEntity);
+			if(result>0) 
+				logger.info("\nInserted Audit Record\n{}\n", parsePojoToJsonString(auditEntity));
 			/*
 			 * Save Audit Record to POSTGRES/ MCC DB
 			 */
@@ -560,7 +566,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) {
+	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) throws CustomChecklistBatchException {
 		ChecklistResponse checklistResponse = null;
 		try {
 			parsePojoToJsonString(checklistRequest);
@@ -586,6 +592,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
 
+		}catch(CustomChecklistBatchException ex) {
+			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
+			throw ex;
 		} catch (Exception ex) {
 			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
 		}
@@ -629,7 +638,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return audit;
 	}
 
-	public String executeHttpPostRequest(HttpPost request) {
+	public String executeHttpPostRequest(HttpPost request) throws CustomChecklistBatchException {
 		String result = null;
 		try (CloseableHttpClient httpClient = HttpClients.createDefault();
 				CloseableHttpResponse response = httpClient.execute(request)) {
@@ -641,10 +650,18 @@ public class CustomChecklistBatch implements AutoCloseable {
 			HttpEntity entity = response.getEntity();
 			if (statusCode == 200 && null != entity) {
 				result = EntityUtils.toString(entity);
-			} else {
-				throw new Exception("Post request is not successful: \n" + EntityUtils.toString(entity));
+			} else if(null!= entity && statusCode !=200) {
+				result = EntityUtils.toString(entity);
+				throw new CustomChecklistBatchException(result);
 			}
-		} catch (Exception e) {
+			else {
+				throw new CustomChecklistBatchException("Post request is not successful: \n" + EntityUtils.toString(entity));
+			}
+		}catch(CustomChecklistBatchException ex) {
+			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
+			throw ex;
+		}
+		catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
 		return result;

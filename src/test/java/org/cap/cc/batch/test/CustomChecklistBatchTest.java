@@ -143,7 +143,12 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		String result = null;
 		HttpPost request = new HttpPost();
-		result = executeHttpPostRequest(request);
+		try {
+			result = executeHttpPostRequest(request);
+		} catch (CustomChecklistBatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertNull(result);
 	}
 
@@ -178,7 +183,12 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		post.addHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
 		post.addHeader(HttpHeaders.TIMEOUT, "3000");
 		String response = null;
-		response = executeHttpPostRequest(post);
+		try {
+			response = executeHttpPostRequest(post);
+		} catch (CustomChecklistBatchException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		try {
 			Boolean flag = getUpdatedJobInfo(ccWebServiceUrl, request);
 		} catch (CustomChecklistBatchException e) {
@@ -202,8 +212,18 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		post.addHeader(HttpHeaders.TIMEOUT, "3000");
 		ChecklistResponse checklistResponse = null;
 		String response = null;
-		response = executeHttpPostRequest(post);
-		ChecklistResponse checklistResponse1 = submitChecklistJobRequest(ccWebServiceUrl, request);
+		try {
+			response = executeHttpPostRequest(post);
+		} catch (CustomChecklistBatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			ChecklistResponse checklistResponse1 = submitChecklistJobRequest(ccWebServiceUrl, request);
+		} catch (CustomChecklistBatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		assertNull(checklistResponse);
 	}
 
