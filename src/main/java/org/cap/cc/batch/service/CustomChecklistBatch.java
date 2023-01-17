@@ -297,9 +297,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			Integer totQstSuplPh2Q = null;
 			Integer totQstSuplCriQ = null;
 			// Current Timestamp
-			Timestamp currentTimeStamp = Timestamp.valueOf(
-					LocalDateTime.parse(LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER),
-							CustomChecklistConstants.DATE_TIME_FORMATTER));
+			Timestamp currentTimeStamp = new Timestamp(System.currentTimeMillis());
 			Timestamp chklstCreationDt = currentTimeStamp;
 			Timestamp lastUpdateDt = currentTimeStamp;
 			String updateUserU = CustomChecklistConstants.UPDATE_USER_U_VALUE;
@@ -338,13 +336,15 @@ public class CustomChecklistBatch implements AutoCloseable {
 			/*
 			 * Inserting Audit Record to INFORMIX
 			 */
-			int result = insertAuditRecord(auditEntity);
-			if(result>0) 
-				logger.info("\nInserted Audit Record\n{}\n", parsePojoToJsonString(auditEntity));
+			Integer result = insertAuditRecord(auditEntity);
+			if(null!=result && result>0) 
+				logger.info("\nInserted Audit Record in Informix\n{}\n", parsePojoToJsonString(auditEntity));
 			/*
 			 * Save Audit Record to POSTGRES/ MCC DB
 			 */
-			insertAuditRecordToMCCDB(auditEntity, checklistRequest);
+			result = insertAuditRecordToMCCDB(auditEntity, checklistRequest);
+			if(null!=result && result>0) 
+				logger.info("\nInserted Audit Record in Postgres\n{}\n", parsePojoToJsonString(auditEntity));
 
 		} catch (Exception ex) {
 			logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequest);
@@ -613,27 +613,20 @@ public class CustomChecklistBatch implements AutoCloseable {
 			st.setString(5, etity.getChklst_edition_u());
 			st.setString(6, etity.getLap_packet_type_c());
 			st.setString(7, etity.getChklst_type_c());
-			st.setTimestamp(8, etity.getSupl_from_dt());
-			st.setInt(9, null != etity.getSupl_from_audit_u() ? etity.getSupl_from_audit_u() : 0);
-			st.setTimestamp(10, etity.getChklst_eff_dt());
-			// Seqno
-			st.setInt(11, null != etity.getSeq_no_u() ? etity.getSeq_no_u() : 0);
-			st.setInt(12, null != etity.getTot_qst_cust_ph1_q() ? etity.getTot_qst_cust_ph1_q() : 0);
-			st.setInt(13, null != etity.getTot_qst_cust_ph2_q() ? etity.getTot_qst_cust_ph2_q() : 0);
-			st.setInt(14, null != etity.getTot_qst_cust_cri_q() ? etity.getTot_qst_cust_cri_q() : 0);
-			st.setInt(15, null != etity.getTot_qst_supl_ph1_q() ? etity.getTot_qst_supl_ph1_q() : 0);
-			st.setInt(16, null != etity.getTot_qst_supl_ph2_q() ? etity.getTot_qst_supl_ph2_q() : 0);
-			st.setInt(17, null != etity.getTot_qst_supl_cri_q() ? etity.getTot_qst_supl_cri_q() : 0);
-			st.setTimestamp(18, etity.getChklst_creation_dt());
-			st.setTimestamp(19, etity.getLast_update_dt());
-			st.setString(20, etity.getUpdate_user_u());
-			st.setInt(21, null != etity.getInvoking_pgm_c() ? etity.getInvoking_pgm_c() : 0);
-			st.setInt(22, null != etity.getUpdate_pgm_c() ? etity.getUpdate_pgm_c() : 0);
+			st.setTimestamp(8, etity.getChklst_eff_dt());
+			st.setInt(9, null != etity.getSeq_no_u() ? etity.getSeq_no_u() : 0);
+			st.setInt(10, null != etity.getTot_qst_cust_ph1_q() ? etity.getTot_qst_cust_ph1_q() : 0);
+			st.setInt(11, null != etity.getTot_qst_cust_ph2_q() ? etity.getTot_qst_cust_ph2_q() : 0);
+			st.setTimestamp(12, etity.getChklst_creation_dt());
+			st.setTimestamp(13, etity.getLast_update_dt());
+			st.setString(14, etity.getUpdate_user_u());
+			st.setInt(15, null != etity.getInvoking_pgm_c() ? etity.getInvoking_pgm_c() : 0);
+			st.setInt(16, null != etity.getUpdate_pgm_c() ? etity.getUpdate_pgm_c() : 0);
 
 			audit = st.executeUpdate();
 
 		} catch (Exception e) {
-			logger.debug("Exception in insert audit table(): {}", e.getMessage());
+			logger.error("Exception in insert audit table(): {}", e.getMessage());
 		}
 		return audit;
 	}

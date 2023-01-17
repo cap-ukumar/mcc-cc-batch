@@ -36,7 +36,7 @@ public class CustomChecklistConstants {
 
 	public static final String GET_JOB_COMPLETION_ITERATIONS = "SELECT TRIM(cc.column_data_t) + 0 FROM ptt_standard_codes sc, ptt_std_code_col cc WHERE sc.table_u = 569 AND sc.key_u = '11' AND cc.table_u = sc.table_u AND cc.key_u = sc.key_u AND cc.column_type_u = 'WEBSETTING' AND sc.active_s = 'A' ;";
 	
-	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, supl_from_dt, supl_from_audit_u, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, tot_qst_cust_cri_q, tot_qst_supl_ph1_q, tot_qst_supl_ph2_q, tot_qst_supl_cri_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
+	public static final String INSERT_AUDIT_CHECKLIST = "INSERT INTO lpt_chklst_audit ( abe_au_u, print_us_reg_qst_f, abe_su_u, module_key_c, chklst_edition_u, lap_packet_type_c, chklst_type_c, chklst_eff_dt, seq_no_u, tot_qst_cust_ph1_q, tot_qst_cust_ph2_q, chklst_creation_dt, last_update_dt, update_user_u, invoking_pgm_c, update_pgm_c ) VALUES ( ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );";
 	
 	public static final String INSERT_AUDIT_CHECKLIST_MCC_DB = "INSERT INTO CHKLST_AUDIT ( TASK_U, ITEM_SEQ_U, AU_U, SU_U, CHKLST_MODULE_C, CHKLST_EDITION_U, CHKLST_EDITION_DT, CYCLE_SEQ_NO_U, LAP_PKT_TYPE_C, CHKLST_JSON_N, ACTIVE_F, CREATED_DT, CREATED_USER, LASTUPDATE_DT, LASTUPDATE_USER, CREATED_PGM_C, UPDATED_PGM_C, RECORD_SOURCE ) VALUES ( ?,  ?, ? , ?, ?, ?, ?, ?, ? , ?::json, ?, ?, ?, ?, ?, ?, ?, ? );";
 	
