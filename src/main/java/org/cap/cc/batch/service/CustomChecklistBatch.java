@@ -42,13 +42,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CustomChecklistBatch implements AutoCloseable {
 
-	private Logger logger = LoggerFactory.getLogger(CustomChecklistBatch.class);
+	private Logger logger;
 
 	private Connection informixConnection;
 
 	private Connection postgresConnection;
+	
+	private int ccTaskId;
+	
 
-	public void processData() {
+	private void processData(String dummy) {
 		int totalTasks = 0;
 		int processedTasks = 0;
 		int counter = 1;
@@ -57,7 +60,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		while (null != getAvailableTaskId() && totalTasks < counter) {
 			ccTaskId = getAvailableTaskId();
 			logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId);
-			boolean status = processData(ccTaskId);
+			boolean status = false; //processData(ccTaskId);
 			if (status)
 				processedTasks++;
 			totalTasks++;
@@ -66,7 +69,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				String.valueOf(totalTasks - processedTasks));
 	}
 
-	public boolean processData(int ccTaskId) {
+	public boolean processData() {
 		boolean jobStatus = false;
 		try {
 
@@ -83,10 +86,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 			/*
 			 * Update User_u of ptt_task
 			 */
-			int updateRow = updateUserForTaskId(ccTaskId);
-			logger.info("Updating ptt_task Table for TaskId: {} and Status: {}", ccTaskId, updateRow);
+//			int updateRow = updateUserForTaskId(ccTaskId);
+//			logger.info("Updating ptt_task Table for TaskId: {} and Status: {}", ccTaskId, updateRow);
 
-			if (updateRow > 0) {
+//			if (updateRow > 0) {
 				// Get CAP Domain
 				final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
 						.orElseThrow(() -> new CustomChecklistBatchException("CAP Domain isn't fetched")) + "\\pullere";
@@ -129,10 +132,10 @@ public class CustomChecklistBatch implements AutoCloseable {
 					throw new CustomChecklistBatchException(
 							"One or more jobs was not completed in the allocated time, for taskId:: " + ccTaskId);
 				}
-			} else {
-				logger.error("Unable to update ptt_task:: {}", updateRow);
-				throw new CustomChecklistBatchException("Unable to update ptt_task for taskId:: " + ccTaskId);
-			}
+//			} else {
+//				logger.error("Unable to update ptt_task:: {}", updateRow);
+//				throw new CustomChecklistBatchException("Unable to update ptt_task for taskId:: " + ccTaskId);
+//			}
 
 		} catch (CustomChecklistBatchException e) {
 			logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "processData()", e.getMessage());
@@ -1174,12 +1177,14 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 
 	}
+	public CustomChecklistBatch() {}
 
-	public CustomChecklistBatch() {
+	public CustomChecklistBatch(int taskId) {
 		// Create Database Connections
 		createInformixDbConnection();
 		createPostgresDbConnection();
-
+		this.ccTaskId = taskId;
+		logger = LoggerFactory.getLogger(Thread.currentThread().getName());
 	}
 
 	@Override
