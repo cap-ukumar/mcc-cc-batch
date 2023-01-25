@@ -1,18 +1,19 @@
 package org.cap.cc.batch;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
-import org.cap.cc.batch.dao.CustomChecklistConstants;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
+import org.cap.cc.batch.dao.CustomLoggingEvents;
+import org.cap.cc.batch.repository.CustomChecklistBatchRepository;
 import org.cap.cc.batch.service.CustomChecklistBatch;
-import org.cap.cc.batch.utils.CapConfigConstants;
-import org.cap.cc.batch.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,137 +21,159 @@ public class MccCCBatchService {
 
 	private static Logger logger = LoggerFactory.getLogger(MccCCBatchService.class);
 
-	private static Semaphore semaphore = new Semaphore(1);
+	private Semaphore semaphore = new Semaphore(1);
 
-	private static List<Integer> list = new ArrayList<>();
+	private CustomChecklistBatchRepository repository;
 
-	private static Connection connection;
+	private int tempTaskId;
 
-	static {
-		try {
-			connection = DriverManager.getConnection(CommonUtils.getProperty(CapConfigConstants.INFORMIX_URL),
-					CommonUtils.getProperty(CapConfigConstants.INFORMIX_USERNAME),
-					CommonUtils.getProperty(CapConfigConstants.INFORMIX_PASSWORD));
-			list.add(4);
-			list.add(3);
-			list.add(2);
-			list.add(1);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	private boolean isFirstTask = true;
+
+	public MccCCBatchService() {
+		repository = new CustomChecklistBatchRepository();
 	}
 
-	private static Integer getAvailableTaskId() {
-		Integer taskId = null;
-		ResultSet rs = null;
-		try (Statement st = connection.createStatement();) {
-			rs = st.executeQuery(CustomChecklistConstants.GET_TASK_ID);
-			if (null != rs && rs.next()) {
-				taskId = rs.getInt(1);
-			}
-		} catch (Exception e) {
-			logger.debug("Exception in getAvailableTaskId():: {}", e.getMessage());
-		}
-		return taskId;
+	public CustomChecklistBatchRepository getRepository() {
+		return repository;
 	}
 
-	public static int updateUserForTaskId(int taskId) {
-		int result = -1;
-		String specialInstrT = CommonUtils.getUUID();
-		try (PreparedStatement st = connection.prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
-			st.setString(1, specialInstrT);
-			st.setInt(2, CustomChecklistConstants.PROGRAM_ID);
-			st.setInt(3, taskId);
-			result = st.executeUpdate();
-		} catch (Exception e) {
-			logger.error("Error in updateUserForTaskId():: {}", e.getMessage());
-		}
-		return result;
-	}
-
-	public static int fetchTask() {
+	// Acquire Shared permit to get taskId
+	public int fetchTask() {
 		int task = 0;
 		try {
 			semaphore.acquire();
-			task=getAvailableTaskId();
-//			task = list.remove(0);
+			task = repository.getAvailableTaskId();
+			if (isFirstTask && task > 0) {
+				repository.logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, task);
+				isFirstTask = false;
+			}
+
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		return task;
 	}
 
+	// Finally Release permit only after updating task table
+	public boolean updateTask(int taskId) {
+		int result = -1;// repository.updateUserForTaskId(taskId);
+		releaseLock();
+		return result > 0;
+	}
+
+	// Release Lock
+	public void releaseLock() {
+		semaphore.release();
+	}
+
+	public int getTempTaskId() {
+		return tempTaskId;
+	}
+
+	public void setTempTaskId(int tempTaskId) {
+		this.tempTaskId = tempTaskId;
+	}
+
 	public static void main(String[] args) {
-		Thread t1 = new Thread(new Runner(), "Task-1");
-		Thread t2 = new Thread(new Runner(), "Task-2");
-		Thread t3 = new Thread(new Runner(), "Task-3");
-		Thread t4 = new Thread(new Runner(), "Task-4");
 
-//		ExecutorService service = Executors.newFixedThreadPool(4);
-//		for(int i=0; i<5; i++) {
-//			Thread t = new Thread(new Runner(), "Task-"+i+1);
-//			service.submit(t);
-//		}
-
-		t1.start();
-		t2.start();
-		t3.start();
-		t4.start();
-
-		try {
-			t1.join();
-			t2.join();
-			t3.join();
-			t4.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
+		executeBatch();
 
 	}
 
-	public static void releaseLock() {
-		semaphore.release();
+	private static void executeBatch() {
+		int totalTasks = 0;
+		int processedTasks = 0;
+
+		MccCCBatchService mccCcBatch = new MccCCBatchService();
+
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+                .namingPattern("Task-%d")
+                .priority(Thread.MAX_PRIORITY)
+                .build();
+		ExecutorService service = Executors.newFixedThreadPool(2,factory);
+		List<Callable<Boolean>> callableList = new ArrayList<>();
+		for (int i = 0; i < 2; i++) {
+			Callable<Boolean> runner = new Runner(mccCcBatch);
+			callableList.add(runner);
+		}
+		boolean isBatchCompleted = true;
+		try {
+			List<Future<Boolean>> futureList = service.invokeAll(callableList);
+			for (Future<Boolean> future : futureList) {
+				boolean isJobCompleted = false;
+				try {
+					while (null == future || !future.isDone()) {
+						logger.info("Waiting for Future to return:");
+					}
+					isJobCompleted = future.get();
+				} catch (ExecutionException e) {
+					e.printStackTrace();
+				}
+				if (isJobCompleted)
+					processedTasks++;
+				totalTasks++;
+				isBatchCompleted = isBatchCompleted && isJobCompleted;
+			}
+			service.shutdown();
+			service.awaitTermination(1L, TimeUnit.DAYS);
+		} catch (InterruptedException e) {
+			isBatchCompleted = false;
+		}
+
+		// Finally log Cc batch Finished
+		mccCcBatch.getRepository().logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, mccCcBatch.getTempTaskId(),
+				String.valueOf(totalTasks), String.valueOf(totalTasks - processedTasks));
 	}
 
 }
 
-class Runner implements Runnable {
+class Runner implements Callable<Boolean> {
 	private Logger logger = LoggerFactory.getLogger(Thread.currentThread().getName());
 
-	@Override
-	public void run() {
-		try {
-			Thread.sleep(100);
-			int taskId = MccCCBatchService.fetchTask();
-			if (taskId != 0 && taskId > 0) {
-				int update = MccCCBatchService.updateUserForTaskId(taskId);
-				if (update > 0) {
-					logger.info("{} Thread acquired Task: {}", Thread.currentThread().getName(), taskId);
+	MccCCBatchService mccCcBatch;
 
-					// Release permit only after updating task table
-					MccCCBatchService.releaseLock();
+	public Runner(MccCCBatchService mccCcBatch) {
+		this.mccCcBatch = mccCcBatch;
+	}
+
+	@Override
+	public Boolean call() {
+		boolean result = false;
+		try {
+			Thread.sleep(10000);
+			// Acquire Permit
+			int taskId = mccCcBatch.fetchTask();
+			if (taskId > 0) {
+				// Release Permit either true or false
+				boolean isUpdated = mccCcBatch.updateTask(taskId);
+				mccCcBatch.setTempTaskId(taskId);
+				if (isUpdated) {
+					logger.info("{} Thread acquired Task: {}", Thread.currentThread().getName(), taskId);
+					/*
+					 * Update User_u of ptt_task
+					 */
+					logger.info("{} Thread Updated ptt_task table for Task: {}.", Thread.currentThread().getName(),
+							taskId);
 
 					// Process Data
-					try (CustomChecklistBatch customChecklistBatch = new CustomChecklistBatch(taskId);) {
-						customChecklistBatch.processData();
-					} catch (Exception ex) {
-						logger.error("Exception in main():: {}", ex.getMessage());
-					}
+					CustomChecklistBatch customChecklistBatch = new CustomChecklistBatch(taskId);
+					result = customChecklistBatch.processData();
+
 				} else {
-					logger.error("{} Thread failed to acquired Task: {}, stopping.", Thread.currentThread().getName(),
-							taskId);
-					// Release permit
-					MccCCBatchService.releaseLock();
+					logger.error("{} Thread failed to update ptt_task table for Task: {}, stopping.",
+							Thread.currentThread().getName(), taskId);
+					mccCcBatch.getRepository().logEventInMccDB(CustomLoggingEvents.TASK_EXCEPTION, taskId, " Failed to update ptt_task table for Task:");
 				}
 			} else {
 				logger.error("{} Thread unable to fetch a Task, stopping", Thread.currentThread().getName());
 				// Release permit
-				MccCCBatchService.releaseLock();
+				mccCcBatch.releaseLock();
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+			result = false;
 		}
+		return result;
 	}
 
 }

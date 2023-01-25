@@ -1,7 +1,6 @@
 package org.cap.cc.batch.service;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,8 +30,7 @@ import org.cap.cc.batch.model.ChecklistRequest;
 import org.cap.cc.batch.model.ChecklistResponse;
 import org.cap.cc.batch.model.ContentChannel;
 import org.cap.cc.batch.model.PrinterData;
-import org.cap.cc.batch.utils.CapConfigConstants;
-import org.cap.cc.batch.utils.CommonUtils;
+import org.cap.cc.batch.repository.CustomChecklistBatchRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,40 +38,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class CustomChecklistBatch implements AutoCloseable {
+public class CustomChecklistBatch {
 
 	private Logger logger;
 
 	private Connection informixConnection;
 
 	private Connection postgresConnection;
-	
-	private int ccTaskId;
-	
 
-	private void processData(String dummy) {
-		int totalTasks = 0;
-		int processedTasks = 0;
-		int counter = 1;
-		// Get Unprocessed TaskId
-		Integer ccTaskId = null;
-		while (null != getAvailableTaskId() && totalTasks < counter) {
-			ccTaskId = getAvailableTaskId();
-			logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId);
-			boolean status = false; //processData(ccTaskId);
-			if (status)
-				processedTasks++;
-			totalTasks++;
-		}
-		logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId, String.valueOf(totalTasks),
-				String.valueOf(totalTasks - processedTasks));
-	}
+	private int ccTaskId;
+
+	private CustomChecklistBatchRepository repository;
+
 
 	public boolean processData() {
 		boolean jobStatus = false;
 		try {
 
-			logEventInMccDB(CustomLoggingEvents.STARTED_PROCESSING_TASK, ccTaskId);
+			repository.logEventInMccDB(CustomLoggingEvents.STARTED_PROCESSING_TASK, ccTaskId);
 
 			// Get CustomChecklist FilePath
 			final String ccFilePath = Optional.ofNullable(getCustomChecklistFilePath())
@@ -83,62 +65,51 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Interrupt
 //			System.exit(0);
 
+			// Get CAP Domain
+			final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
+					.orElseThrow(() -> new CustomChecklistBatchException("CAP Domain isn't fetched")) + "\\pullere";
+			logger.info("CAP-Domain: {}", CAP_DOMAIN);
+
+			// Get Checklist Webservice Url
+			final String ccWebServiceUrl = Optional.ofNullable(getCustomChecklistWebServiceUrl())
+					.orElseThrow(() -> new CustomChecklistBatchException("WebService Url isn't fetched"));
+			logger.info("WebService-Url: {}", ccWebServiceUrl);
+
+			// Get Job Status Polling Interval
+			Integer pollingInterval = Optional.ofNullable(getPollingInterval())
+					.orElseThrow(() -> new CustomChecklistBatchException("Polling Interval isn't fetched"));
+			logger.info("pollingInterval: {}", pollingInterval);
+
+			// Get Job Status Polling Iterations
+			Integer iterations = Optional.ofNullable(getJobIterations())
+					.orElseThrow(() -> new CustomChecklistBatchException("Iterations are unknown"));
+			logger.info("Iterations: {}", iterations);
+
+			// Get Basic Checklist Details
+			final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
+					.orElseThrow(() -> new CustomChecklistBatchException(
+							"Checklists are empty for given Taskid: " + ccTaskId));
+
 			/*
-			 * Update User_u of ptt_task
+			 * Generate Custom Checklists & Get Thunderhead Batchjob Status
 			 */
-//			int updateRow = updateUserForTaskId(ccTaskId);
-//			logger.info("Updating ptt_task Table for TaskId: {} and Status: {}", ccTaskId, updateRow);
+			jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, pollingInterval,
+					iterations, checklistRequests);
 
-//			if (updateRow > 0) {
-				// Get CAP Domain
-				final String CAP_DOMAIN = Optional.ofNullable(getCapDomain())
-						.orElseThrow(() -> new CustomChecklistBatchException("CAP Domain isn't fetched")) + "\\pullere";
-				logger.info("CAP-Domain: {}", CAP_DOMAIN);
-
-				// Get Checklist Webservice Url
-				final String ccWebServiceUrl = Optional.ofNullable(getCustomChecklistWebServiceUrl())
-						.orElseThrow(() -> new CustomChecklistBatchException("WebService Url isn't fetched"));
-				logger.info("WebService-Url: {}", ccWebServiceUrl);
-
-				// Get Job Status Polling Interval
-				Integer pollingInterval = Optional.ofNullable(getPollingInterval())
-						.orElseThrow(() -> new CustomChecklistBatchException("Polling Interval isn't fetched"));
-				logger.info("pollingInterval: {}", pollingInterval);
-
-				// Get Job Status Polling Iterations
-				Integer iterations = Optional.ofNullable(getJobIterations())
-						.orElseThrow(() -> new CustomChecklistBatchException("Iterations are unknown"));
-				logger.info("Iterations: {}", iterations);
-
-				// Get Basic Checklist Details
-				final List<ChecklistRequest> checklistRequests = Optional.ofNullable(getBasicChecklistDetails(ccTaskId))
-						.orElseThrow(() -> new CustomChecklistBatchException(
-								"Checklists are empty for given Taskid: " + ccTaskId));
-
+			if (jobStatus) {
+				logger.info("Thunderhead jobs completed successfully for taskId: {} ", ccTaskId);
 				/*
-				 * Generate Custom Checklists & Get Thunderhead Batchjob Status
+				 * Update And Insert into MCC_DB auditLog
 				 */
-				jobStatus = generateCustomChecklists(ccFilePath, ccTaskId, CAP_DOMAIN, ccWebServiceUrl, pollingInterval,
-						iterations, checklistRequests);
-
-				if (jobStatus) {
-					logger.info("Thunderhead jobs completed successfully for taskId: {} ", ccTaskId);
-					/*
-					 * Update And Insert into MCC_DB auditLog
-					 */
-				} else {
-					// Log Error in DB
-					logger.error("One or more jobs was not completed in the allocated time");
-					throw new CustomChecklistBatchException(
-							"One or more jobs was not completed in the allocated time, for taskId:: " + ccTaskId);
-				}
-//			} else {
-//				logger.error("Unable to update ptt_task:: {}", updateRow);
-//				throw new CustomChecklistBatchException("Unable to update ptt_task for taskId:: " + ccTaskId);
-//			}
+			} else {
+				// Log Error in DB
+				logger.error("One or more jobs was not completed in the allocated time");
+				throw new CustomChecklistBatchException(
+						"One or more jobs was not completed in the allocated time, for taskId:: " + ccTaskId);
+			}
 
 		} catch (CustomChecklistBatchException e) {
-			logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "processData()", e.getMessage());
+			repository.logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId, "processData()", e.getMessage());
 			jobStatus = false;
 		} catch (Exception ex) {
 			logger.error("{}", ex.getMessage());
@@ -149,13 +120,13 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	public boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
-			final List<ChecklistRequest> checklistRequests)throws CustomChecklistBatchException {
+			final List<ChecklistRequest> checklistRequests) throws CustomChecklistBatchException {
 		boolean jobStatus = false;
 
 		/*
 		 * Submit ChecklistRequest Jobs
 		 */
-		logger.info("\nStart Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+		logger.info("Start Submit ChecklistRequest Jobs at {}", System.currentTimeMillis());
 		if (null != checklistRequests)
 			for (int i = 0; i < checklistRequests.size(); i++) {
 				try {
@@ -165,7 +136,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 					fetchChecklistDetails(ccFilePath, ccTaskId, CAP_DOMAIN, checklistRequest);
 
 					String request = parsePojoToJsonString(checklistRequest);
-					logger.info("\n\t({}) Checklist Job Request::\n \t{}\n", i + 1, request);
+					logger.info("({}) Checklist Job Request:: {}", i + 1, request);
 
 					// Submit new ChecklistRequest Job
 					ChecklistResponse checklistResponse = submitChecklistJobRequest(ccWebServiceUrl, checklistRequest);
@@ -174,16 +145,16 @@ public class CustomChecklistBatch implements AutoCloseable {
 					checklistRequest.setChecklistResponse(checklistResponse);
 
 					String response = parsePojoToJsonString(checklistResponse);
-					logger.info("\n\t({}) Checklist Job Response::\n \t{}\n", i + 1, response);
+					logger.info("({}) Checklist Job Response::{}", i + 1, response);
 				} catch (CustomChecklistBatchException ex) {
-					logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+					repository.logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
 							ex.getMessage());
 					throw ex;
-				}  catch (Exception e) {
+				} catch (Exception e) {
 					logger.error("Exception submitting checklistRequest:: {}", e.getMessage());
 				}
 			}
-		logger.info("\nEnd Submit ChecklistRequest Jobs at {}\n", System.currentTimeMillis());
+		logger.info("End Submit ChecklistRequest Jobs at {}", System.currentTimeMillis());
 
 		/*
 		 * Prepare ChecklistJobInfoRequests Pojos
@@ -204,17 +175,17 @@ public class CustomChecklistBatch implements AutoCloseable {
 		/*
 		 * Get Thunderhead BatchJob Status
 		 */
-		logger.info("\nStart Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
-		logEventInMccDB(CustomLoggingEvents.STARTED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId);
+		logger.info("Start Get Thunderhead BatchJob Status at {}", System.currentTimeMillis());
+		repository.logEventInMccDB(CustomLoggingEvents.STARTED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId);
 		try {
 			jobStatus = getThunderheadBatchJobStatus(ccTaskId, ccWebServiceUrl, pollingInterval, iterations,
 					checklistJobInfoRequests, checklistRequests);
 			String logJobStatus = jobStatus ? "SUCCESSFUL" : "UNSUCCESSFUL";
-			logEventInMccDB(CustomLoggingEvents.FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId, logJobStatus);
+			repository.logEventInMccDB(CustomLoggingEvents.FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS, ccTaskId, logJobStatus);
 		} catch (Exception e) {
 			logger.info("Exception{}", e.getMessage());
 		}
-		logger.info("\n\nEnd Get Thunderhead BatchJob Status at {}\n", System.currentTimeMillis());
+		logger.info("End Get Thunderhead BatchJob Status at {}", System.currentTimeMillis());
 		return jobStatus;
 
 	}
@@ -246,12 +217,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 					counter++;
 				}
 			} catch (CustomChecklistBatchException ex) {
-				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+				repository.logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
 						ex.getMessage());
 			} catch (Exception e) {
 				status[i] = false;
 				// log exception in db
-				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+				repository.logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
 						e.getMessage());
 			}
 
@@ -264,7 +235,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				saveAuditRecord(checklistRequests.get(i));
 			} else {
 				// Log error
-				logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+				repository.logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
 						"Error Inserting new Audit Record for Batch Job: "
 								+ checklistJobInfoRequests.get(i).getBatchJobId() + " & Task Id: " + ccTaskId);
 			}
@@ -335,19 +306,19 @@ public class CustomChecklistBatch implements AutoCloseable {
 			auditEntity.setInvoking_pgm_c(invokingPgmC);
 			auditEntity.setUpdate_pgm_c(updatePgmC);
 
-			logger.info("\nInserting Audit Record\n{}\n", parsePojoToJsonString(auditEntity));
+			logger.info("Inserting Audit Record {}", parsePojoToJsonString(auditEntity));
 			/*
 			 * Inserting Audit Record to INFORMIX
 			 */
 			Integer result = insertAuditRecord(auditEntity);
-			if(null!=result && result>0) 
-				logger.info("\nInserted Audit Record in Informix\n{}\n", parsePojoToJsonString(auditEntity));
+			if (null != result && result > 0)
+				logger.info("Inserted Audit Record in Informix{}", parsePojoToJsonString(auditEntity));
 			/*
 			 * Save Audit Record to POSTGRES/ MCC DB
 			 */
 			result = insertAuditRecordToMCCDB(auditEntity, checklistRequest);
-			if(null!=result && result>0) 
-				logger.info("\nInserted Audit Record in Postgres\n{}\n", parsePojoToJsonString(auditEntity));
+			if (null != result && result > 0)
+				logger.info("Inserted Audit Record in Postgres{}", parsePojoToJsonString(auditEntity));
 
 		} catch (Exception ex) {
 			logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequest);
@@ -487,7 +458,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 			if (null != jobInfo && Boolean.logicalAnd(jobInfo.isBatchJobCompleted(), jobInfo.isBatchJobSuccessful()))
 				flag = true;
 			// If message contains error throw custom exception
-			else if (null != message && !jobInfo.isBatchJobSuccessful() && isContainsErrorString(message) && jobInfo.getBatchJobStatus().equals("E")) {
+			else if (null != message && !jobInfo.isBatchJobSuccessful() && isContainsErrorString(message)
+					&& jobInfo.getBatchJobStatus().equals("E")) {
 				throw new CustomChecklistBatchException(message);
 			} else
 				flag = false;
@@ -522,12 +494,12 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Get Staple Value
 			String stapleFlag = Optional.ofNullable(getStapleValue(printSetDetailC))
 					.orElseThrow(() -> new Exception("Staple not fetched"));
-			
+
 			/*
-			 *  Staple Value for Json
+			 * Staple Value for Json
 			 */
 			checklist.setStapleFlag(stapleFlag.equalsIgnoreCase("y") || stapleFlag.equalsIgnoreCase("yp"));
-			
+
 			String stapleValue = CustomChecklistConstants.STAPLE_VALUE;
 
 			// Get Media Color
@@ -569,7 +541,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) throws CustomChecklistBatchException {
+	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest)
+			throws CustomChecklistBatchException {
 		ChecklistResponse checklistResponse = null;
 		try {
 			parsePojoToJsonString(checklistRequest);
@@ -590,16 +563,16 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 			// Execute HttpPost Request
 			String response = executeHttpPostRequest(request);
-			logger.info("\nJson Response: \n{}\n", response);
+			logger.info("Json Response: {}", response);
 
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
 
-		}catch(CustomChecklistBatchException ex) {
+		} catch (CustomChecklistBatchException ex) {
 			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
 			throw ex;
 		} catch (Exception ex) {
-			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
+			logger.info("Exception in executeHttpPostRequest():: {}", ex.getMessage());
 		}
 		return checklistResponse;
 	}
@@ -646,18 +619,17 @@ public class CustomChecklistBatch implements AutoCloseable {
 			HttpEntity entity = response.getEntity();
 			if (statusCode == 200 && null != entity) {
 				result = EntityUtils.toString(entity);
-			} else if(null!= entity && statusCode !=200) {
+			} else if (null != entity && statusCode != 200) {
 				result = EntityUtils.toString(entity);
 				throw new CustomChecklistBatchException(result);
+			} else {
+				throw new CustomChecklistBatchException(
+						"Post request is not successful: \n" + EntityUtils.toString(entity));
 			}
-			else {
-				throw new CustomChecklistBatchException("Post request is not successful: \n" + EntityUtils.toString(entity));
-			}
-		}catch(CustomChecklistBatchException ex) {
+		} catch (CustomChecklistBatchException ex) {
 			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
 			throw ex;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
 		return result;
@@ -677,34 +649,6 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 		return path;
 
-	}
-
-	public Integer getAvailableTaskId() {
-		Integer taskId = null;
-		ResultSet rs = null;
-		try (Statement st = getInformixConnection().createStatement();) {
-			rs = st.executeQuery(CustomChecklistConstants.GET_TASK_ID);
-			if (null != rs && rs.next()) {
-				taskId = rs.getInt(1);
-			}
-		} catch (Exception e) {
-			logger.debug("Exception in getAvailableTaskId():: {}", e.getMessage());
-		}
-		return taskId;
-	}
-
-	public int updateUserForTaskId(int taskId) {
-		int result = -1;
-		String specialInstrT = CommonUtils.getUUID();
-		try (PreparedStatement st = getInformixConnection().prepareStatement(CustomChecklistConstants.UPDATE_USER_U);) {
-			st.setString(1, specialInstrT);
-			st.setInt(2, CustomChecklistConstants.PROGRAM_ID);
-			st.setInt(3, taskId);
-			result = st.executeUpdate();
-		} catch (Exception e) {
-			logger.error("Error in updateUserForTaskId():: {}", e.getMessage());
-		}
-		return result;
 	}
 
 	public String getCapDomain() {
@@ -787,7 +731,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 				obj.setPacketType(rs.getString(CustomChecklistConstants.PACKET_TYPE));
 				obj.setPrintSetDetailC(rs.getString(CustomChecklistConstants.PRINT_SET_DETAIL_C));
 				list.add(obj);
-				logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId, obj.getModuleId(), obj.getEditionId(),
+				repository.logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId, obj.getModuleId(), obj.getEditionId(),
 						obj.getAuId(), obj.getSuId());
 			}
 		} catch (Exception e) {
@@ -963,8 +907,8 @@ public class CustomChecklistBatch implements AutoCloseable {
 		String jsonString = null;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
-			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-//			jsonString = mapper.writeValueAsString(object);
+//			jsonString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+			jsonString = mapper.writeValueAsString(object);
 
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
@@ -987,178 +931,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 		return object;
 	}
 
-	/**
-	 * 
-	 * @param event
-	 * @param taskId
-	 * @param strings...
-	 * 
-	 * @category
-	 *           <h1>BATCH_STARTED:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.BATCH_STARTED, ccTaskId); <br>
-	 *           </br>
-	 *           <h1>STARTED_PROCESSING_TASK:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.STARTED_PROCESSING_TASK,
-	 *           ccTaskId); <br>
-	 *           </br>
-	 *           <h1>SUBMIT_CHECKLIST:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.SUBMIT_CHECKLIST, taskId,
-	 *           obj.getModuleId(), obj.getEditionId(), obj.getAuId(),
-	 *           obj.getSuId()); <br>
-	 *           </br>
-	 *           <h1>STARTED_CHECKING_THUNDERHEAD_JOB_STATUS:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.STARTED_CHECKING_THUNDERHEAD_JOB_STATUS,
-	 *           ccTaskId); <br>
-	 *           </br>
-	 *           <h1>FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS,
-	 *           ccTaskId, logJobStatus); <br>
-	 *           </br>
-	 *           <h1>BATCH_FINISHED:</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.BATCH_FINISHED, ccTaskId,
-	 *           String.valueOf(totalTasks), String.valueOf(totalTasks -
-	 *           processedTasks)); <br>
-	 *           </br>
-	 *           <h1>BATCH_ERROR</h1>
-	 *           logEventInMccDB(CustomLoggingEvents.BATCH_ERROR, ccTaskId,"getThunderheadBatchJobStatus()",
-	 *           e.getMessage()); <br>
-	 *           </br>
-	 *           <h1>BATCH_EXCEPTION
-	 *           logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
-						e.getMessage());
-	 *
-	 *
-	 */
-	public void logEventInMccDB(CustomLoggingEvents event, int taskId, String... strings) {
-		try {
-			String timeInstant = LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER);
-			switch (event) {
-			case BATCH_STARTED:
-				logger.info(CustomChecklistConstants.LOG_DIVIDER);
-				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_STARTED);
-				logger.info(CustomChecklistConstants.LOG_DIVIDER);
-
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						CustomChecklistConstants.LOG_DIVIDER);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						timeInstant + CustomChecklistConstants.LOG_CC_BATCH_STARTED);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						CustomChecklistConstants.LOG_DIVIDER);
-				break;
-			case BATCH_FINISHED:
-				logger.info(CustomChecklistConstants.LOG_DIVIDER);
-				logger.info("{}{}", timeInstant, CustomChecklistConstants.LOG_CC_BATCH_FINISHED);
-				logger.info(CustomChecklistConstants.LOG_DIVIDER);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						timeInstant + CustomChecklistConstants.LOG_TOTAL_PROCESSED_TASKS + strings[0]);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						timeInstant + CustomChecklistConstants.LOG_TOTAL_FAILED_TASKS + strings[1]);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						CustomChecklistConstants.LOG_DIVIDER);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						timeInstant + CustomChecklistConstants.LOG_CC_BATCH_FINISHED);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						CustomChecklistConstants.LOG_DIVIDER);
-				break;
-			case STARTED_PROCESSING_TASK:
-				String message = String.format(CustomChecklistConstants.LOG_STARTED_PROCESSING_TASK, taskId);
-				logger.info("{}{}", timeInstant, message);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + message);
-				break;
-			case SUBMIT_CHECKLIST:
-				String checklist = String.format(CustomChecklistConstants.LOG_CHECKLIST_DETAILS, strings[0], strings[1],
-						strings[2], strings[3]);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL,
-						timeInstant + checklist);
-				break;
-			case STARTED_CHECKING_THUNDERHEAD_JOB_STATUS:
-				String message1 = String.format(CustomChecklistConstants.LOG_STARTED_CHECKING_THUNDERHEAD_JOB_STATUS,
-						taskId);
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL, timeInstant + message1);
-				break;
-			case FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS:
-				String status = String.format(CustomChecklistConstants.LOG_FINISHED_CHECKING_THUNDERHEAD_JOB_STATUS,
-						strings[0], taskId);
-				String msgType = strings[0].equals("SUCCESSFUL") ? CustomChecklistConstants.LOG_MSG_TYPE_INFORMATIONAL
-						: CustomChecklistConstants.LOG_MSG_TYPE_WARNING;
-				insertChecklistLog(taskId, msgType, timeInstant + status);
-				break;
-			case BATCH_ERROR:
-				StringBuilder builder = new StringBuilder();
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_DATE_TIME, timeInstant));
-				builder.append("\n");
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_INSTANCE_NAME, this.getClass()));
-				builder.append("\n");
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_CLASS_NAME, this.getClass()));
-				builder.append("\n");
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_FUNCTION_NAME, strings[0]));
-				builder.append("\n");
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_CODE, -1));
-				builder.append("\n");
-				builder.append(String.format(CustomChecklistConstants.LOG_ERROR_TEXT, strings[1]));
-				builder.append("\n");
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_FAILED,
-						builder.toString());
-				break;
-			case BATCH_EXCEPTION:
-				insertChecklistLog(taskId, CustomChecklistConstants.LOG_MSG_TYPE_WARNING,
-						timeInstant +" " + strings[0] + "\n" + strings[1]);
-				break;
-			default:
-				logger.info("");
-			}
-		} catch (Exception ex) {
-			logger.error("Error in logEventInMccDB():: {}", ex.getMessage());
-
-		}
-	}
-
-	public Integer insertChecklistLog(int taskId, String messageType, String message) {
-		Integer chklst = null;
-		try (PreparedStatement st = getPostgresConnection()
-				.prepareStatement(CustomChecklistConstants.INSERT_LOG_MCC_DB);) {
-
-			st.setInt(1, taskId);
-			st.setString(2, messageType);
-			st.setString(3, message);
-			st.setString(4, CustomChecklistConstants.UPDATE_USER_U_VALUE);
-			st.setString(5, CustomChecklistConstants.UPDATE_USER_U_VALUE);
-			st.setInt(6, CustomChecklistConstants.PROGRAM_ID);
-			st.setInt(7, CustomChecklistConstants.PROGRAM_ID);
-			st.setString(8, CustomChecklistConstants.SOURCE);
-
-			chklst = st.executeUpdate();
-
-		} catch (Exception e) {
-			logger.debug("Exception in insert chklst log table(): {}", e.getMessage());
-		}
-		return chklst;
-	}
-
-	private void createInformixDbConnection() {
-		try {
-			this.informixConnection = DriverManager.getConnection(
-					CommonUtils.getProperty(CapConfigConstants.INFORMIX_URL),
-					CommonUtils.getProperty(CapConfigConstants.INFORMIX_USERNAME),
-					CommonUtils.getProperty(CapConfigConstants.INFORMIX_PASSWORD));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
+	
 	public Connection getInformixConnection() {
 		return this.informixConnection;
-	}
-
-	private void createPostgresDbConnection() {
-		try {
-			this.postgresConnection = DriverManager.getConnection(
-					CommonUtils.getProperty(CapConfigConstants.POSTGRES_URL),
-					CommonUtils.getProperty(CapConfigConstants.POSTGRES_USERNAME),
-					CommonUtils.getProperty(CapConfigConstants.POSTGRES_PASSWORD));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public Connection getPostgresConnection() {
@@ -1177,20 +952,22 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 
 	}
-	public CustomChecklistBatch() {}
+
+	public CustomChecklistBatch() {
+	}
 
 	public CustomChecklistBatch(int taskId) {
-		// Create Database Connections
-		createInformixDbConnection();
-		createPostgresDbConnection();
+		// Retrive Database Connections from Repository Class
+		this.repository = new CustomChecklistBatchRepository();
+		this.informixConnection = repository.getInformixConnection();
+		this.postgresConnection = repository.getPostgresConnection();
 		this.ccTaskId = taskId;
 		logger = LoggerFactory.getLogger(Thread.currentThread().getName());
 	}
 
-	@Override
-	public void close() throws Exception {
-		// Release Database Connections
-		removeConnections();
+	public CustomChecklistBatchRepository getRepository() {
+		return repository;
 	}
-
+	
+	
 }
