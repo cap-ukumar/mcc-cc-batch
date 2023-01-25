@@ -25,7 +25,7 @@ public class MccCCBatchService {
 
 	private CustomChecklistBatchRepository repository;
 
-	private int tempTaskId;
+	private int tempTaskId = 1234;
 
 	private boolean isFirstTask = true;
 
@@ -86,17 +86,14 @@ public class MccCCBatchService {
 
 		MccCCBatchService mccCcBatch = new MccCCBatchService();
 
-		BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("Task-%d")
-                .priority(Thread.MAX_PRIORITY)
-                .build();
-		ExecutorService service = Executors.newFixedThreadPool(2,factory);
+		BasicThreadFactory factory = new BasicThreadFactory.Builder().namingPattern("Task-%d")
+				.priority(Thread.MAX_PRIORITY).build();
+		ExecutorService service = Executors.newFixedThreadPool(4, factory);
 		List<Callable<Boolean>> callableList = new ArrayList<>();
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 4; i++) {
 			Callable<Boolean> runner = new Runner(mccCcBatch);
 			callableList.add(runner);
 		}
-		boolean isBatchCompleted = true;
 		try {
 			List<Future<Boolean>> futureList = service.invokeAll(callableList);
 			for (Future<Boolean> future : futureList) {
@@ -112,12 +109,11 @@ public class MccCCBatchService {
 				if (isJobCompleted)
 					processedTasks++;
 				totalTasks++;
-				isBatchCompleted = isBatchCompleted && isJobCompleted;
 			}
 			service.shutdown();
 			service.awaitTermination(1L, TimeUnit.DAYS);
 		} catch (InterruptedException e) {
-			isBatchCompleted = false;
+			e.printStackTrace();
 		}
 
 		// Finally log Cc batch Finished
@@ -162,12 +158,15 @@ class Runner implements Callable<Boolean> {
 				} else {
 					logger.error("{} Thread failed to update ptt_task table for Task: {}, stopping.",
 							Thread.currentThread().getName(), taskId);
-					mccCcBatch.getRepository().logEventInMccDB(CustomLoggingEvents.TASK_EXCEPTION, taskId, " Failed to update ptt_task table for Task:");
+					mccCcBatch.getRepository().logEventInMccDB(CustomLoggingEvents.TASK_EXCEPTION, taskId,
+							" Failed to update ptt_task table for Task: ");
 				}
 			} else {
 				logger.error("{} Thread unable to fetch a Task, stopping", Thread.currentThread().getName());
 				// Release permit
 				mccCcBatch.releaseLock();
+				mccCcBatch.getRepository().logEventInMccDB(CustomLoggingEvents.TASK_EXCEPTION,
+						mccCcBatch.getTempTaskId(), " Unable to fetch a Task: ");
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
