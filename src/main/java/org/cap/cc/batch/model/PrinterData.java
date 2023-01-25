@@ -1,5 +1,7 @@
 package org.cap.cc.batch.model;
 
+import org.cap.cc.batch.dao.CustomChecklistConstants;
+
 public class PrinterData {
 
 	private String filePath;
@@ -25,8 +27,8 @@ public class PrinterData {
 
 	public void setFilePath(String filePath, Integer taskId, Integer itemSeqNo, String auId, String suId,
 			String moduleId, String editionId) {
-		String path = filePath + taskId + "_" + itemSeqNo + "_" + auId + "_" + suId + "_" + moduleId + "_" + editionId
-				+ ".pdf";
+		String path = filePath + taskId + CustomChecklistConstants.UNDERSCORE + itemSeqNo + CustomChecklistConstants.UNDERSCORE + auId + CustomChecklistConstants.UNDERSCORE + suId + CustomChecklistConstants.UNDERSCORE + moduleId + CustomChecklistConstants.UNDERSCORE + editionId
+				+ CustomChecklistConstants.DOT + CustomChecklistConstants.EXTENSION_PDF;
 		this.filePath = path;
 	}
 
