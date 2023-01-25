@@ -5,6 +5,25 @@
 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level - %msg%n</pattern>
 		</encoder>
 	</appender>
+	
+	<appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+    <!-- in the absence of the class attribute, it is assumed that the
+         desired discriminator type is
+         ch.qos.logback.classic.sift.MDCBasedDiscriminator -->
+    <discriminator>
+      <key>taskId</key>
+      <defaultValue>Task-0</defaultValue>
+    </discriminator>
+    <sift>
+      <appender name="FILE-${userid}" class="ch.qos.logback.core.FileAppender">
+        <file>./logs/mcc-cc-batch-${taskId}.log</file>
+        <append>false</append>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+          <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level - %msg%n </pattern>
+        </layout>
+      </appender>
+    </sift>
+  </appender>
 
 	<appender name="FILE"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -25,5 +44,6 @@
 	<root level="info">
 		<appender-ref ref="STDOUT" />
 		<appender-ref ref="FILE"/>
+		<appender-ref ref="SIFT"/>
 	</root>
 </configuration>

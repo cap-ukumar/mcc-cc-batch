@@ -16,6 +16,7 @@ import org.cap.cc.batch.repository.CustomChecklistBatchRepository;
 import org.cap.cc.batch.service.CustomChecklistBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 public class MccCCBatchService {
 
@@ -124,7 +125,7 @@ public class MccCCBatchService {
 }
 
 class Runner implements Callable<Boolean> {
-	private Logger logger = LoggerFactory.getLogger(Thread.currentThread().getName());
+	private Logger logger = LoggerFactory.getLogger(Runner.class);
 
 	MccCCBatchService mccCcBatch;
 
@@ -134,9 +135,10 @@ class Runner implements Callable<Boolean> {
 
 	@Override
 	public Boolean call() {
+		MDC.put("taskId", Thread.currentThread().getName());
 		boolean result = false;
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(1000);
 			// Acquire Permit
 			int taskId = mccCcBatch.fetchTask();
 			if (taskId > 0) {
