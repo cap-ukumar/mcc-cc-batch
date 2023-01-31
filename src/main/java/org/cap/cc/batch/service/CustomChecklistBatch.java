@@ -528,10 +528,10 @@ public class CustomChecklistBatch {
 			printerData.setStaple(stapleValue.equalsIgnoreCase("y"));
 			printerData.setMediaColor(mediaColor);
 			printerData.setMediaType(mediaType);
-			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
-					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
-//			printerData.setFilePath("/inspiredev/lap/thunderhead/Friday/", ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+//			printerData.setFilePath(ccFilePath, ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
 //					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
+			printerData.setFilePath("/inspiredev/lap/thunderhead/Monday/", ccTaskId, checklist.getItemSeqNo(), checklist.getAuId(),
+					checklist.getSuId(), checklist.getModuleId(), checklist.getEditionId());
 
 			// Set PrinterData
 			checklist.setPrinterData(printerData);
@@ -956,13 +956,13 @@ public class CustomChecklistBatch {
 	public CustomChecklistBatch() {
 	}
 
-	public CustomChecklistBatch(int taskId) {
+	public CustomChecklistBatch(int taskId, Logger threadLogger) {
 		// Retrive Database Connections from Repository Class
 		this.repository = new CustomChecklistBatchRepository();
 		this.informixConnection = repository.getInformixConnection();
 		this.postgresConnection = repository.getPostgresConnection();
 		this.ccTaskId = taskId;
-		logger = LoggerFactory.getLogger(Thread.currentThread().getName());
+		logger = threadLogger;
 	}
 
 	public CustomChecklistBatchRepository getRepository() {

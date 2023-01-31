@@ -57,7 +57,7 @@ public class MccCCBatchService {
 
 	// Finally Release permit only after updating task table
 	public boolean updateTask(int taskId) {
-		int result = -1;// repository.updateUserForTaskId(taskId);
+		int result = repository.updateUserForTaskId(taskId);
 		releaseLock();
 		return result > 0;
 	}
@@ -96,6 +96,7 @@ public class MccCCBatchService {
 			callableList.add(runner);
 		}
 		try {
+
 			List<Future<Boolean>> futureList = service.invokeAll(callableList);
 			for (Future<Boolean> future : futureList) {
 				boolean isJobCompleted = false;
@@ -154,7 +155,7 @@ class Runner implements Callable<Boolean> {
 							taskId);
 
 					// Process Data
-					CustomChecklistBatch customChecklistBatch = new CustomChecklistBatch(taskId);
+					CustomChecklistBatch customChecklistBatch = new CustomChecklistBatch(taskId, logger);
 					result = customChecklistBatch.processData();
 
 				} else {
