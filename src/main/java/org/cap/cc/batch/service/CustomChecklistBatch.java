@@ -146,7 +146,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 	public boolean generateCustomChecklists(final String ccFilePath, final Integer ccTaskId, final String CAP_DOMAIN,
 			final String ccWebServiceUrl, Integer pollingInterval, Integer iterations,
-			final List<ChecklistRequest> checklistRequests) {
+			final List<ChecklistRequest> checklistRequests)throws CustomChecklistBatchException {
 		boolean jobStatus = false;
 
 		/*
@@ -172,7 +172,11 @@ public class CustomChecklistBatch implements AutoCloseable {
 
 					String response = parsePojoToJsonString(checklistResponse);
 					logger.info("\n\t({}) Checklist Job Response::\n \t{}\n", i + 1, response);
-				} catch (Exception e) {
+				} catch (CustomChecklistBatchException ex) {
+					logEventInMccDB(CustomLoggingEvents.BATCH_EXCEPTION, ccTaskId, "getThunderheadBatchJobStatus()",
+							ex.getMessage());
+					throw ex;
+				}  catch (Exception e) {
 					logger.error("Exception submitting checklistRequest:: {}", e.getMessage());
 				}
 			}
@@ -293,9 +297,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 			Integer totQstSuplPh2Q = null;
 			Integer totQstSuplCriQ = null;
 			// Current Timestamp
-			Timestamp currentTimeStamp = Timestamp.valueOf(
-					LocalDateTime.parse(LocalDateTime.now().format(CustomChecklistConstants.DATE_TIME_FORMATTER),
-							CustomChecklistConstants.DATE_TIME_FORMATTER));
+			Timestamp currentTimeStamp = new Timestamp(System.currentTimeMillis());
 			Timestamp chklstCreationDt = currentTimeStamp;
 			Timestamp lastUpdateDt = currentTimeStamp;
 			String updateUserU = CustomChecklistConstants.UPDATE_USER_U_VALUE;
@@ -334,11 +336,15 @@ public class CustomChecklistBatch implements AutoCloseable {
 			/*
 			 * Inserting Audit Record to INFORMIX
 			 */
-			insertAuditRecord(auditEntity);
+			Integer result = insertAuditRecord(auditEntity);
+			if(null!=result && result>0) 
+				logger.info("\nInserted Audit Record in Informix\n{}\n", parsePojoToJsonString(auditEntity));
 			/*
 			 * Save Audit Record to POSTGRES/ MCC DB
 			 */
-			insertAuditRecordToMCCDB(auditEntity, checklistRequest);
+			result = insertAuditRecordToMCCDB(auditEntity, checklistRequest);
+			if(null!=result && result>0) 
+				logger.info("\nInserted Audit Record in Postgres\n{}\n", parsePojoToJsonString(auditEntity));
 
 		} catch (Exception ex) {
 			logger.error("Error Inserting Audit Record for Checklist: {}", checklistRequest);
@@ -560,7 +566,7 @@ public class CustomChecklistBatch implements AutoCloseable {
 		}
 	}
 
-	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) {
+	public ChecklistResponse submitChecklistJobRequest(String ccWebServiceUrl, ChecklistRequest checklistRequest) throws CustomChecklistBatchException {
 		ChecklistResponse checklistResponse = null;
 		try {
 			parsePojoToJsonString(checklistRequest);
@@ -586,6 +592,9 @@ public class CustomChecklistBatch implements AutoCloseable {
 			// Parse JsonResponse to Pojo
 			checklistResponse = (ChecklistResponse) parseJsonStringToPojo(response, ChecklistResponse.class);
 
+		}catch(CustomChecklistBatchException ex) {
+			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
+			throw ex;
 		} catch (Exception ex) {
 			logger.info("Exception in submitChecklistJobRequest():: {}", ex.getMessage());
 		}
@@ -604,32 +613,25 @@ public class CustomChecklistBatch implements AutoCloseable {
 			st.setString(5, etity.getChklst_edition_u());
 			st.setString(6, etity.getLap_packet_type_c());
 			st.setString(7, etity.getChklst_type_c());
-			st.setTimestamp(8, etity.getSupl_from_dt());
-			st.setInt(9, null != etity.getSupl_from_audit_u() ? etity.getSupl_from_audit_u() : 0);
-			st.setTimestamp(10, etity.getChklst_eff_dt());
-			// Seqno
-			st.setInt(11, null != etity.getSeq_no_u() ? etity.getSeq_no_u() : 0);
-			st.setInt(12, null != etity.getTot_qst_cust_ph1_q() ? etity.getTot_qst_cust_ph1_q() : 0);
-			st.setInt(13, null != etity.getTot_qst_cust_ph2_q() ? etity.getTot_qst_cust_ph2_q() : 0);
-			st.setInt(14, null != etity.getTot_qst_cust_cri_q() ? etity.getTot_qst_cust_cri_q() : 0);
-			st.setInt(15, null != etity.getTot_qst_supl_ph1_q() ? etity.getTot_qst_supl_ph1_q() : 0);
-			st.setInt(16, null != etity.getTot_qst_supl_ph2_q() ? etity.getTot_qst_supl_ph2_q() : 0);
-			st.setInt(17, null != etity.getTot_qst_supl_cri_q() ? etity.getTot_qst_supl_cri_q() : 0);
-			st.setTimestamp(18, etity.getChklst_creation_dt());
-			st.setTimestamp(19, etity.getLast_update_dt());
-			st.setString(20, etity.getUpdate_user_u());
-			st.setInt(21, null != etity.getInvoking_pgm_c() ? etity.getInvoking_pgm_c() : 0);
-			st.setInt(22, null != etity.getUpdate_pgm_c() ? etity.getUpdate_pgm_c() : 0);
+			st.setTimestamp(8, etity.getChklst_eff_dt());
+			st.setInt(9, null != etity.getSeq_no_u() ? etity.getSeq_no_u() : 0);
+			st.setInt(10, null != etity.getTot_qst_cust_ph1_q() ? etity.getTot_qst_cust_ph1_q() : 0);
+			st.setInt(11, null != etity.getTot_qst_cust_ph2_q() ? etity.getTot_qst_cust_ph2_q() : 0);
+			st.setTimestamp(12, etity.getChklst_creation_dt());
+			st.setTimestamp(13, etity.getLast_update_dt());
+			st.setString(14, etity.getUpdate_user_u());
+			st.setInt(15, null != etity.getInvoking_pgm_c() ? etity.getInvoking_pgm_c() : 0);
+			st.setInt(16, null != etity.getUpdate_pgm_c() ? etity.getUpdate_pgm_c() : 0);
 
 			audit = st.executeUpdate();
 
 		} catch (Exception e) {
-			logger.debug("Exception in insert audit table(): {}", e.getMessage());
+			logger.error("Exception in insert audit table(): {}", e.getMessage());
 		}
 		return audit;
 	}
 
-	public String executeHttpPostRequest(HttpPost request) {
+	public String executeHttpPostRequest(HttpPost request) throws CustomChecklistBatchException {
 		String result = null;
 		try (CloseableHttpClient httpClient = HttpClients.createDefault();
 				CloseableHttpResponse response = httpClient.execute(request)) {
@@ -641,10 +643,18 @@ public class CustomChecklistBatch implements AutoCloseable {
 			HttpEntity entity = response.getEntity();
 			if (statusCode == 200 && null != entity) {
 				result = EntityUtils.toString(entity);
-			} else {
-				throw new Exception("Post request is not successful: \n" + EntityUtils.toString(entity));
+			} else if(null!= entity && statusCode !=200) {
+				result = EntityUtils.toString(entity);
+				throw new CustomChecklistBatchException(result);
 			}
-		} catch (Exception e) {
+			else {
+				throw new CustomChecklistBatchException("Post request is not successful: \n" + EntityUtils.toString(entity));
+			}
+		}catch(CustomChecklistBatchException ex) {
+			logger.error("Exception in executeHttpPostRequest():: {}", ex.getMessage());
+			throw ex;
+		}
+		catch (Exception e) {
 			logger.error("Exception in executeHttpPostRequest():: {}", e.getMessage());
 		}
 		return result;
