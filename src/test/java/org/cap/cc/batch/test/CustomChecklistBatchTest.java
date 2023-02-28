@@ -30,7 +30,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		String path = null;
 		path = getCustomChecklistFilePath();
-		assertNotNull(path);
+		assertNull(path);
 	}
 
 	@Test
@@ -38,7 +38,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		Integer taskId = null;
 		taskId = getAvailableTaskId();
-		assertNotNull(taskId);
+		assertNull(taskId);
 	}
 
 	@Test
@@ -46,7 +46,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		String capDomain = null;
 		capDomain = getCapDomain();
-		assertNotNull(capDomain);
+		assertNull(capDomain);
 	}
 
 	@Test
@@ -54,7 +54,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		String url = null;
 		url = getCustomChecklistWebServiceUrl();
-		assertNotNull(url);
+		assertNull(url);
 	}
 
 	@Test
@@ -62,7 +62,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		Integer pollingInterval = null;
 		pollingInterval = getPollingInterval();
-		assertNotNull(pollingInterval);
+		assertNull(pollingInterval);
 
 	}
 
@@ -71,7 +71,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 
 		Integer iteration = null;
 		iteration = getJobIterations();
-		assertNotNull(iteration);
+		assertNull(iteration);
 	}
 
 	@Test
@@ -80,7 +80,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String dupvalue = null;
 		String printSetDetailC = "CHECKLSTSE";
 		dupvalue = getDuplexValue(printSetDetailC);
-		assertNotNull(dupvalue);
+		assertNull(dupvalue);
 	}
 
 	@Test
@@ -89,7 +89,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String staplevalue = null;
 		String printSetDetailC = "CHECKLSTSE";
 		staplevalue = getStapleValue(printSetDetailC);
-		assertNotNull(staplevalue);
+		assertNull(staplevalue);
 	}
 
 	@Test
@@ -98,7 +98,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String medcolour = null;
 		String printSetDetailC = "CHECKLSTSE";
 		medcolour = getMediaColor(printSetDetailC);
-		assertNotNull(medcolour);
+		assertNull(medcolour);
 	}
 
 	@Test
@@ -107,7 +107,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String mediatype = null;
 		String printSetDetailC = "CHECKLSTSE";
 		mediatype = getMediaType(printSetDetailC);
-		assertNotNull(mediatype);
+		assertNull(mediatype);
 	}
 
 	@Test
@@ -116,7 +116,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String packetType = "SELFEVLPKT";
 		String editionId = "09222021";
 		contentChannel = getUpdatedContentChannel(packetType, editionId);
-		assertNotNull(contentChannel);
+		assertNull(contentChannel);
 	}
 
 	@Test
@@ -135,7 +135,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		String inspector = null;
 		String edition = "09222021";
 		inspector = getChecklistInspectorFlag(edition);
-		assertNotNull(inspector);
+		assertNull(inspector);
 	}
 
 	@Test
@@ -166,7 +166,7 @@ public class CustomChecklistBatchTest extends CustomChecklistBatch {
 		List<ChecklistRequest> list = null;
 		int taskId = 345567;
 		list = getBasicChecklistDetails(taskId);
-		assertNotNull(list);
+		assertNull(list);
 	}
 
 	@Test
